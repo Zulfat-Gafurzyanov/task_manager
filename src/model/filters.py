@@ -1,0 +1,10 @@
+from pydantic import BaseModel, Field
+
+
+class FilterParams(BaseModel):
+    """Модель Query-параметров для пагинации и сортировки."""
+    model_config = {"extra": "forbid"}  # Запрещаем доп.параметры.
+
+    limit: int = Field(default=20, ge=0)
+    offset: int = Field(default=0, ge=0)
+    order_by: str = "created_at"
