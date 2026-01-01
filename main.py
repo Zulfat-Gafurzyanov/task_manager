@@ -1,16 +1,9 @@
-from datetime import datetime, timezone
-from typing import Annotated
+from fastapi import FastAPI
 
-from fastapi import FastAPI, Query
-from pydantic import BaseModel, Field
-
-
-
-
-
-
+from src.api.v1 import tasks
 
 
 app = FastAPI()
+app.include_router(tasks.router, prefix="/v1", tags=["tasks"])
 
 task_db: dict = {}

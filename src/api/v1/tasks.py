@@ -1,6 +1,8 @@
 from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+
+from model.filters import FilterParams
 
 router = APIRouter(prefix="/tasks")
 
@@ -21,7 +23,7 @@ async def get_task(
     return list(task_db.values())  # продумать возврат из БД
 
 
-@app.post("", status_code=201, response_model=Task)
+@router.post("", status_code=201, response_model=Task)
 async def create_task(new_task: Task) -> Task:
     """Создает задачу."""
     # ВЫЗОВ сервисного слоя 1 строчка!!!
@@ -35,7 +37,7 @@ async def create_task(new_task: Task) -> Task:
 
 
 # ? Как в данном случае отдавать статус-код, если задача не найдена?
-@app.delete("/{task_id}", status_code=204)
+@router.delete("/{task_id}", status_code=204)
 async def delete_task(task_id: UUID):
     # ВЫЗОВ сервисного слоя 1 строчка!!!
     if task_id in task_db.keys():
@@ -45,13 +47,13 @@ async def delete_task(task_id: UUID):
         return {"detail": "Задача не найдена"}
 
 
-@app.put("/{task_id}")
+@router.put("/{task_id}")
 async def update_task():
     # ВЫЗОВ сервисного слоя 1 строчка!!!
     pass
 
 
-@app.patch("/{task_id}")
+@router.patch("/{task_id}")
 async def partial_update_task():
     # ВЫЗОВ сервисного слоя 1 строчка!!!
     pass
