@@ -31,8 +31,6 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
-    pass
-
     model_config = {
         "json_schema_extra": {
             "examples": [
@@ -46,32 +44,19 @@ class TaskCreate(TaskBase):
     }
 
 
-class TaskUpdate(TaskBase):
-    # Подумать над частичной заменой!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    pass
-
-
 class TaskResponse(TaskBase):
     id: int
     status: bool = Field(
-        default=False,
+        default=True,
         title="Статус задачи"
     )
     created_at: datetime = Field(
         title="Время создания"
     )
 
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "id": 1,
-                    "status": False,
-                    "created_at": "2025-12-22T15:53:00+05:00",
-                    "name": "Изучить FastAPI",
-                    "description": "1. Изучить Path, Query-параметры",
-                    "deadline": "2030-09-17T12:34:00+05:00"
-                }
-            ]
-        }
-    }
+
+class TaskUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    deadline: datetime | None = None
+    status: bool | None = None
