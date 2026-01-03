@@ -3,6 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+# ???
+# Здесь валидация полей тоже нужна?
 class TaskCreateDTO(BaseModel):
     """DTO для создания задачи."""
     name: str
@@ -19,10 +21,12 @@ class TaskDTO(BaseModel):
     status: bool
     created_at: datetime
 
+    model_config = {"from_attributes": True}  # Для работы с ORM.
+
 
 class TaskUpdateDTO(BaseModel):
     """DTO для изменения задачи."""
-    name: str
+    name: str | None
     description: str | None
     deadline: datetime | None
-    status: bool
+    status: bool | None

@@ -3,6 +3,9 @@ from datetime import datetime
 from sqlmodel import Field, SQLModel
 
 
+# ???
+# Сейчас сделал работу с БД по документации FastAPI через SQLModel.
+# В каком месте и каким образом нужно делать Абстракцию доступа к БД?
 class Task(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)  # ??? По какой логике расставляются индексы? Нужно ли на все поля?
@@ -10,3 +13,6 @@ class Task(SQLModel, table=True):
     deadline: datetime | None = Field(default=None)
     status: bool = Field(default=True)  # True - активная задача.
     created_at: datetime
+
+# ???
+# Здесь валидация полей тоже нужна?

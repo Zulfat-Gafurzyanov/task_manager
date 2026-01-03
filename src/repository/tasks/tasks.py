@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlmodel import select
 
@@ -20,7 +20,7 @@ class TaskRepository:
             name=data.name,
             description=data.description,
             deadline=data.deadline,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now()
         )
         self.session.add(task)
         self.session.commit()
@@ -33,23 +33,26 @@ class TaskRepository:
         tasks = self.session.exec(statement).all()
         return [TaskDTO.model_validate(task) for task in tasks]
 
-    def read_by_id(self, task_id: int) -> TaskDTO | None:
+    def read_by_id(self, id: int) -> TaskDTO | None:
         """Получает задачу по его id."""
         # ???
-        # в документации SQLModel select(Hero).where(Hero.name == "Deadpond")
-        # а в FastAPI hero = session.get(Hero, hero_id)
+        # в документации SQLModel написано:     select(Hero).where(Hero.name == "Deadpond")
+        # а в FastAPI:                          hero = session.get(Hero, hero_id)
         # как лучше?
-        task = self.session.get(Task, task_id)
+        task = self.session.get(Task, id)
+
+        # ???
+        # Есть ли разница в проверке if task или в if not task? Выйти раньше или это без разницы.
         if not task:
             return None
-            # ??? Нужно ли в работе с DTO пробрасывать исключения?
-            # raise TaskNotFound(f"Задача с id: {task_id} не найдена")
-            # или их нужно только в API при взаимодействии с клиентом?
+            # ??? Нужно ли в репозитории пробрасывать исключения?
+            # raise TaskNotFound например
         return TaskDTO.model_validate(task)
 
-    def update(self, task_id: int, data: TaskUpdateDTO) -> TaskDTO | None:
-        """Обновляет задачу."""
-        task = self.session.get(Task, task_id)
+    def update(self, id: int, data: TaskUpdateDTO) -> TaskDTO | None:
+        """Обновляет поля задачи."""
+        task = self.session.get(Task, id)
+
         if not task:
             return None
 
@@ -60,17 +63,10 @@ class TaskRepository:
         self.session.refresh(task)
         return TaskDTO.model_validate(task)
 
-
-    def delete(self, task_id: int) -> bool:
+    def delete(self, id: int) -> bool:
         """Удаляет задачу. Возвращает True, если задача удалена."""
-        task = self.session.get(Task, task_id)
-        # ???
-        # Есть ли разница в проверке if task или в if not task?
-        # if task:
-        #     self.session.delete(task)
-        #     self.session.commit()
-        #     return True
-        # return False
+        task = self.session.get(Task, id)
+
         if not task:
             return False
 
@@ -82,6 +78,3 @@ class TaskRepository:
     # Нужны ли методы по другим полям: get_by_name? delete_by_name?
     # Или например получение активных задач? get_active?
     # Или CRUD в Repository не должен быть раздутым?
-
-
-#repository = TaskRepository(session)

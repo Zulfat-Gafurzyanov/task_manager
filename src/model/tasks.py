@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -18,13 +18,12 @@ class TaskBase(BaseModel):
         title="Срок выполнения"
     )
 
-    # ---???---
+    # ???
     # Когда использовать model_validator?
-    # ---???---
     @field_validator("deadline")
     @classmethod
     def validate_deadline(cls, value: datetime | None) -> datetime | None:
-        if value is not None and value <= datetime.now(timezone.utc):
+        if value is not None and value <= datetime.now():
             raise ValueError(
                 '"Срок выполнения" не может быть меньше текущего времени')
         return value
