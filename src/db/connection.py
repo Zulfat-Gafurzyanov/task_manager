@@ -4,8 +4,6 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import create_engine, Session, SQLModel
 
-from src.database.models import Task
-
 
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"

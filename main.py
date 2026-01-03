@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.api.v1 import tasks
-from src.database.connection import create_db_and_tables
+from src.db.connection import create_db_and_tables
+from src.db.models import Task
 
 
 @asynccontextmanager

@@ -2,8 +2,8 @@ from datetime import datetime
 
 from sqlmodel import select
 
-from src.database.connection import SessionDep
-from src.database.models import Task
+from src.db.connection import SessionDep
+from src.db.models import Task
 from src.model.filters import FilterParams
 from src.repository.tasks.dto import TaskCreateDTO, TaskDTO, TaskUpdateDTO
 
