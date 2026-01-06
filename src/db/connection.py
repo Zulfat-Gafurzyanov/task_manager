@@ -1,25 +1,28 @@
-# ??? Как называться должен этот файл?
 from typing import Annotated
 
 from fastapi import Depends
-from sqlmodel import create_engine, Session, SQLModel
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    AsyncSession,
+    async_sessionmaker
+)
+from sqlmodel import SQLModel
 
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-connect_args = {"check_same_thread": False}
-# ????? Нужно ли использовать асинхронный engine?
-engine = create_engine(sqlite_url, connect_args=connect_args)
+engine = create_async_engine("sqlite+aiosqlite:///database.db")
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+# ???
+# Как осуществить абстракцию? У меня все на SQLModel.
+async def create_db_and_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
-def get_session():
-    with Session(engine) as session:
+async def get_session():
+    async with async_session_maker() as session:
         yield session
 
 
-SessionDep = Annotated[Session, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]

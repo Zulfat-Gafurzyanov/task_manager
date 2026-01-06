@@ -3,33 +3,67 @@ from src.repository.tasks.dto import TaskCreateDTO, TaskDTO, TaskUpdateDTO
 from src.repository.tasks.tasks import TaskRepository
 
 
+class TaskNotFoundException(Exception):
+    """Исключение, возникающее когда задача не найдена по id."""
+    pass
+
+
 # ???
-# Что помимо вызова функций из репозитория, должно входить в бизнес-логику сервис-слоя?
-# Не понимаю где должна быть:
-# - валидация: если есть валидация данных от пользователя в src.model нужно ли делать ее в DTO или в сервис-слое?
-# - обработка исключений: в API? в сервис-слое? в репозитории? Где мы их пробрасываем, а где обрабатываем?
+# Что помимо вызова функций из репозитория и проброса исключений,
+# может входить в бизнес-логику сервис-слоя?
 class TaskService:
     """Класс для описания бизнес-логики."""
 
     def __init__(self, repository: TaskRepository):
         self.repository = repository
 
-    def create_task(self, data: TaskCreateDTO) -> TaskDTO:
+    def _get_task_or_raise(
+            self, task: TaskDTO | None, task_id: int) -> TaskDTO:
+        """Проверяет наличие задачи по id,
+        если ее нет то выбрасывает исключение."""
+        if not task:
+            raise TaskNotFoundException(f"Задача с id: {task_id} не найдена.")
+        return task
+
+    async def create_task(self, data: TaskCreateDTO) -> TaskDTO:
         """Создает задачу."""
-        return self.repository.create(data)
+        return await self.repository.create(data)
 
-    def get_all_tasks(self, filters: FilterParams) -> list[TaskDTO]:
+    async def get_all_tasks(self, filters: FilterParams) -> list[TaskDTO]:
         """Получает все задачи с учётом фильтров (limit, offset)."""
-        return self.repository.read_all(filters)
+        return await self.repository.read_all(filters)
 
-    def get_task_by_id(self, id: int) -> TaskDTO | None:
+    async def get_task_by_id(self, id: int) -> TaskDTO:
         """Получает задачу по его id."""
-        return self.repository.read_by_id(id)
+        task = await self.repository.read_by_id(id)
+        return self._get_task_or_raise(task, id)
 
-    def update_task(self, id: int, data: TaskUpdateDTO) -> TaskDTO | None:
+    async def update_task(self, id: int, data: TaskUpdateDTO) -> TaskDTO:
         """Обновляет поля задачи."""
-        return self.repository.update(id, data)
+        updated_task = await self.repository.update(id, data)
+        return self._get_task_or_raise(updated_task, id)
 
-    def delete_task(self, id: int) -> bool:
+    async def delete_task(self, id: int) -> bool:
         """Удаляет задачу."""
-        return self.repository.delete(id)
+        deleted_task = await self.repository.delete(id)
+        if not deleted_task:
+            raise TaskNotFoundException(f"Задача с id: {id} не найдена.")
+        return True
+        # ???
+        # Здесь не смог придумать как использовать _check_task
+        # потому что self.repository.delete(id) возвращает bool
+        # а _check_task ждет TaskDTO | None. Как лучше сделать?
+
+        # !!! из мыслей исправить в repository возврат сделать не bool,
+        # a TaskDTO | None, но не понимаю стоит ли после удаления task из бд,
+        # возвращать в функции delete его копию в виде TaskDTO
+
+        # Что имею ввиду repository.delete(id):
+        # async def delete(self, id: int) -> TaskDTO | None:
+        #     task = await self.session.get(Task, id)
+        #     if not task:
+        #         return None  ---->  (вместо False)
+        #     task_dto = TaskDTO.model_validate(task)
+        #     await self.session.delete(task)
+        #     await self.session.commit()
+        #     return task_dto  ---->  (вместо True)

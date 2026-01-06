@@ -1,62 +1,83 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from model.filters import FilterParams
+from src.db.connection import SessionDep
+from src.model.filters import FilterParams
+from src.model.tasks import TaskCreate, TaskResponse, TaskUpdate
+from src.repository.tasks.dto import TaskCreateDTO, TaskUpdateDTO
+from src.repository.tasks.tasks import TaskRepository
+from src.service.tasks import TaskNotFoundException, TaskService
 
 router = APIRouter(prefix="/tasks")
 
 
-@router.get("")
-async def get_tasks(filter_query: Annotated[FilterParams, Query()]) -> list:
-    """Возвращает список задач."""
-    # ВЫЗОВ сервисного слоя 1 строчка!!!
-    return list(task_db.values())  # продумать возврат из БД
+def get_task_service(session: SessionDep) -> TaskService:
+    """Зависимость для получения сервисного слоя задач."""
+    repository = TaskRepository(session)
+    return TaskService(repository)
 
 
-@router.get("/{task_id}")
-async def get_task(
-    task_id: int,
-    filter_query: Annotated[FilterParams, Query()]) -> Task:
-    """Возвращает список задач."""
-    # ВЫЗОВ сервисного слоя 1 строчка!!!
-    return list(task_db.values())  # продумать возврат из БД
-
-
-@router.post("", status_code=201, response_model=Task)
-async def create_task(new_task: Task) -> Task:
+@router.post("", status_code=201, response_model=TaskResponse)
+async def create_task(
+    data: TaskCreate,
+    service: Annotated[TaskService, Depends(get_task_service)]
+) -> TaskResponse:
     """Создает задачу."""
-    # ВЫЗОВ сервисного слоя 1 строчка!!!
-    # ? Какую логику проверки придумать, чтобы повторно не создавалась задача?
-    # по названию задачи? Или такая логика не нужна?
-    new_task.id = uuid4()
-    new_task.created_at = datetime.now(timezone.utc)
-
-    task_db[new_task.id] = new_task
-    return new_task
+    dto = TaskCreateDTO(**data.model_dump())
+    task_dto = await service.create_task(dto)
+    return TaskResponse(**task_dto.model_dump())
 
 
-# ? Как в данном случае отдавать статус-код, если задача не найдена?
+@router.get("", status_code=200, response_model=list[TaskResponse])
+async def get_tasks(
+    service: Annotated[TaskService, Depends(get_task_service)],
+    filters: Annotated[FilterParams, Query()]
+) -> list[TaskResponse]:
+    """Возвращает список задач."""
+    tasks_dto = await service.get_all_tasks(filters)
+    return [TaskResponse(**task.model_dump()) for task in tasks_dto]
+
+
+@router.get("/{task_id}", status_code=200, response_model=TaskResponse)
+async def get_task(
+    # ???
+    # нужно делать? task_id: Annotated[int, Path(gt=0)] вдруг введут /-1    :)
+    task_id: int,
+    service: Annotated[TaskService, Depends(get_task_service)]
+) -> TaskResponse:
+    """Получает задачу по его id."""
+    try:
+        task_dto = await service.get_task_by_id(task_id)
+        return TaskResponse(**task_dto.model_dump())
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=404, detail=f"Ошибка: {e}")
+
+
 @router.delete("/{task_id}", status_code=204)
-async def delete_task(task_id: UUID):
-    # ВЫЗОВ сервисного слоя 1 строчка!!!
-    if task_id in task_db.keys():
-        del task_db[task_id]
-        return {"detail": "Задача успешно удалена"}
-    else:
-        return {"detail": "Задача не найдена"}
+async def delete_task(
+    task_id: int,
+    service: Annotated[TaskService, Depends(get_task_service)]
+) -> None:
+    """Удаляет задачу."""
+    try:
+        await service.delete_task(task_id)
+        return None
+    # ?? или лучше ответ {"message": "Задача успешно удалена"} ??
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=404, detail=f"Ошибка: {e}")
 
 
-@router.put("/{task_id}")
-async def update_task():
-    # ВЫЗОВ сервисного слоя 1 строчка!!!
-    pass
-
-
-@router.patch("/{task_id}")
-async def partial_update_task():
-    # ВЫЗОВ сервисного слоя 1 строчка!!!
-    pass
-    # сделать TaskUpdate(BaseModel) c некоторыми полями:
-    # title, description, status, complete_before.
-    # Task(TaskUpdate) расширить до необходимых полей.
+@router.patch("/{task_id}", status_code=200, response_model=TaskResponse)
+async def patch_task(
+    task_id: int,
+    data: TaskUpdate,
+    service: Annotated[TaskService, Depends(get_task_service)]
+):
+    """Обновляет поля задачи, которые были переданы."""
+    try:
+        dto = TaskUpdateDTO(**data.model_dump(exclude_unset=True))
+        updated_task = await service.update_task(task_id, dto)
+        return TaskResponse(**updated_task.model_dump())
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=404, detail=f"Ошибка: {e}")

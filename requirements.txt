@@ -31,8 +31,10 @@ rich-toolkit==0.17.1
 rignore==0.7.6
 sentry-sdk==2.48.0
 shellingham==1.5.4
-SQLAlchemy==2.0.45
+SQLAlchemy[asyncio]==2.0.45
 sqlmodel==0.0.31
+asyncpg==0.31.0
+aiosqlite==0.20.0
 starlette==0.50.0
 typer==0.20.0
 typing-inspection==0.4.2
