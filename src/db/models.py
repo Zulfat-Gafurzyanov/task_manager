@@ -6,6 +6,7 @@ from sqlmodel import Field, SQLModel
 # ???
 # Как осуществить абстракцию? У меня все на SQLModel.
 class Task(SQLModel, table=True):
+    """Модель задачи для хранения в базе данных."""
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)  # ??? По какой логике расставляются индексы? Нужно ли на все поля?
     description: str | None = Field(default=None)
@@ -14,4 +15,5 @@ class Task(SQLModel, table=True):
     created_at: datetime
 
 # ???
-# Здесь валидация полей тоже нужна?
+# Здесь валидация полей тоже нужна? Или ее достаточно на получении данных от клиента?
+# в папке model.

@@ -2,12 +2,18 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.api.v1 import tasks
+from src.api.v1.tasks import router_v1
 from src.db.connection import create_db_and_tables
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Выполняет инициализацию ресурсов при старте приложения.
+
+    В текущей реализации создает базу данных таблицы при запуске.
+    """
+    # ??? в документации так было написано.
     # https://fastapi.tiangolo.com/ru/tutorial/sql-databases/#create-database-tables-on-startup
     # Для продакшн вы, вероятно, будете использовать скрипт миграций, который выполняется до запуска приложения. 🤓
     await create_db_and_tables()
@@ -19,7 +25,7 @@ tags_metadata = [
         "name": "tasks",
         "description": (
             "**Управление задачами**: создание, чтение, обновление и "
-            "удаление задач с поддержкой фильтрации и сортировки."
+            "удаление задач."
         )
     }
 ]
@@ -32,10 +38,7 @@ app = FastAPI(
     redoc_url="/api/v1/redoc",
     docs_url="/api/v1/docs",
     title="Task Manager API",
-    description=(
-        "**Сервис** для эффективного управления задачами "
-        "с расширенными возможностями фильтрации и организации."
-    ),
+    description=("**Сервис** для управления вашими задачами."),
     version="1.0",
     contact={
         "name": "Zulfat Gafurzyanov",
@@ -43,4 +46,5 @@ app = FastAPI(
         "telegram": "@Zulfat_Gafurzyanov",
     }
 )
-app.include_router(tasks.router, prefix="/v1", tags=["tasks"])
+
+app.include_router(router_v1, prefix="/api/v1/tasks", tags=["tasks"])

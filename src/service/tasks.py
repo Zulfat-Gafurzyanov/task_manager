@@ -8,11 +8,13 @@ class TaskNotFoundException(Exception):
     pass
 
 
-# ???
-# Что помимо вызова функций из репозитория и проброса исключений,
-# может входить в бизнес-логику сервис-слоя?
 class TaskService:
-    """Класс для описания бизнес-логики."""
+    """
+    Сервисный слой для работы с задачами.
+
+    Описывает бизнес-логику управления задачами,
+    включая обработку исключений и взаимодействие с репозиторием.
+    """
 
     def __init__(self, repository: TaskRepository):
         self.repository = repository
@@ -30,7 +32,7 @@ class TaskService:
         return await self.repository.create(data)
 
     async def get_all_tasks(self, filters: FilterParams) -> list[TaskDTO]:
-        """Получает все задачи с учётом фильтров (limit, offset)."""
+        """Получает все задачи с учётом фильтров."""
         return await self.repository.read_all(filters)
 
     async def get_task_by_id(self, id: int) -> TaskDTO:
@@ -50,20 +52,20 @@ class TaskService:
             raise TaskNotFoundException(f"Задача с id: {id} не найдена.")
         return True
         # ???
-        # Здесь не смог придумать как использовать _check_task
+        # Здесь не смог придумать как использовать _get_task_or_raise
         # потому что self.repository.delete(id) возвращает bool
-        # а _check_task ждет TaskDTO | None. Как лучше сделать?
+        # а _get_task_or_raise ждет TaskDTO | None. Как лучше сделать?
 
         # !!! из мыслей исправить в repository возврат сделать не bool,
         # a TaskDTO | None, но не понимаю стоит ли после удаления task из бд,
         # возвращать в функции delete его копию в виде TaskDTO
 
-        # Что имею ввиду repository.delete(id):
+        # Что имею ввиду: в repository:
         # async def delete(self, id: int) -> TaskDTO | None:
         #     task = await self.session.get(Task, id)
         #     if not task:
-        #         return None  ---->  (вместо False)
+        #         return None  ---->  (вернуть None вместо False)
         #     task_dto = TaskDTO.model_validate(task)
         #     await self.session.delete(task)
         #     await self.session.commit()
-        #     return task_dto  ---->  (вместо True)
+        #     return task_dto  ---->  (вернуть dto вместо True)
