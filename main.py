@@ -48,3 +48,12 @@ app = FastAPI(
 )
 
 app.include_router(router_v1, prefix="/api/v1/tasks", tags=["tasks"])
+
+
+@app.get("/")
+def root():
+    return {
+        "message": "Task Manager API",
+        "docs": "/api/v1/docs",
+        "redoc": "/api/v1/redoc"
+    }
