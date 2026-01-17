@@ -26,6 +26,7 @@ class Document(Base):
     name: Mapped[str] = mapped_column(String(128))
     path: Mapped[str] = mapped_column(String(256), unique=True)
     task_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id"))
+
     # Связь 1 to many:
     task: Mapped["Task | None"] = relationship(
         "Task", back_populates="documents")
@@ -37,6 +38,7 @@ class Status(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(64), unique=True)
+
     # Связь 1 to many:
     tasks: Mapped[list["Task"]] = relationship(
         "Task", back_populates="status")
@@ -48,6 +50,7 @@ class Tag(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(64), unique=True)
+
     # Связь many to many (через вспомогательную таблицу):
     tasks: Mapped[list["Task"]] = relationship(
         "Task", secondary=TaskTag, back_populates="tags")
