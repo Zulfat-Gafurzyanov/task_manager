@@ -2,20 +2,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from src.db.connection import SessionDep
+from src.dependency.tasks import get_task_service
 from src.model.filters import FilterParams
 from src.model.tasks import TaskCreate, TaskResponse, TaskUpdate
 from src.repository.tasks.dto import TaskCreateDTO, TaskUpdateDTO
-from src.repository.tasks.tasks import TaskRepository
 from src.service.tasks import TaskNotFoundException, TaskService
 
 router_v1 = APIRouter()
-
-
-def get_task_service(session: SessionDep) -> TaskService:
-    """Зависимость для получения сервисного слоя."""
-    repository = TaskRepository(session)
-    return TaskService(repository)
 
 
 @router_v1.post("", status_code=201, response_model=TaskResponse)
@@ -63,8 +56,6 @@ async def delete_task(
     try:
         await service.delete_task(task_id)
         return None
-    # ---???---
-    # или лучше ответ {"message": "Задача успешно удалена"} ??
     except TaskNotFoundException as e:
         raise HTTPException(status_code=404, detail=f"Ошибка: {e}")
 
