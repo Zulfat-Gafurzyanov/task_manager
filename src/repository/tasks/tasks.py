@@ -20,6 +20,8 @@ class TaskRepository:
 
     async def create(self, data: TaskCreateDTO) -> TaskDTO:
         """Создает задачу."""
+        # sels.session.execute(питон строка с sql-запросом)
+
         task = Task(
             name=data.name,
             description=data.description,
@@ -27,7 +29,7 @@ class TaskRepository:
             created_at=datetime.now(timezone.utc)
         )
         self.session.add(task)
-        await self.session.commit()
+        await self.session.commit()  # Избавиться, перейти на контексный менеджер.!!!!
         await self.session.refresh(task)
         return TaskDTO.model_validate(task)
 
@@ -40,10 +42,7 @@ class TaskRepository:
 
     async def read_by_id(self, id: int) -> TaskDTO | None:
         """Получает задачу по его id."""
-        # ???
-        # в документации SQLModel написано:     select(Hero).where(Hero.name == "Deadpond")
-        # а в FastAPI:                          hero = session.get(Hero, hero_id)
-        # как лучше get или where?
+        # SQL запрос
         task = await self.session.get(Task, id)
         if not task:
             return None
@@ -51,6 +50,7 @@ class TaskRepository:
 
     async def update(self, id: int, data: TaskUpdateDTO) -> TaskDTO | None:
         """Обновляет поля задачи."""
+        # 1 запрос SQL (проверили и вернули)
         task = await self.session.get(Task, id)
         if not task:
             return None
@@ -70,7 +70,6 @@ class TaskRepository:
         return True
 
 
-    # ???
-    # Нужны ли методы по другим полям: get_by_name? delete_by_name?
-    # Или например получение активных задач? get_active?
-    # Или CRUD в Repository не должен быть раздутым?
+# TODO:
+# создать метод get_by_name?????????????????????????????????????????????????????????? придумать методы
+# создать метод get_active

@@ -1,5 +1,7 @@
+import os
 from typing import Annotated
 
+from dotenv import load_dotenv
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -8,8 +10,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlmodel import SQLModel
 
-
-engine = create_async_engine("sqlite+aiosqlite:///database.db")
+load_dotenv()
+engine = create_async_engine(os.environ['DATABASE_URL'])
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
@@ -26,4 +28,4 @@ async def get_session():
     async with async_session_maker() as session:
         yield session
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]  # убрать sesiondep а обращаться просто Annotated[AsyncSession, Depends(get_session)]
