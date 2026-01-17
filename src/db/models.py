@@ -1,7 +1,7 @@
 import datetime
 
-from sqlalchemy import Column, Date, ForeignKey, String, Table
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import Date, ForeignKey, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -9,70 +9,64 @@ class Base(DeclarativeBase):
     pass
 
 
-# Вспомогательная таблица для связи many to many:
-TaskTag = Table(
-    "tasks_tags",
-    Base.metadata,
-    Column("task_id", ForeignKey("tasks.id"), primary_key=True),
-    Column("tag_id", ForeignKey("tags.id"), primary_key=True)
-)
-
-
 class Document(Base):
-    """Справочник по документам к задаче."""
-    __tablename__ = "documents"
+    """
+    Справочник по документам к задаче.
+    Связь: Task (one) <-> Document (many).
+    """
+    __tablename__ = "document"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
     path: Mapped[str] = mapped_column(String(256), unique=True)
-    task_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id"))
-
-    # Связь 1 to many:
-    task: Mapped["Task | None"] = relationship(
-        "Task", back_populates="documents")
+    task_id: Mapped[int | None] = mapped_column(
+        ForeignKey("task.id"), nullable=True)
 
 
 class Status(Base):
-    """Справочник по статусу к задаче."""
-    __tablename__ = "statuses"
+    """
+    Справочник по статусу к задаче.
+    Связь: Task (many) <-> Status (one).
+    """
+    __tablename__ = "status"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(64), unique=True)
 
-    # Связь 1 to many:
-    tasks: Mapped[list["Task"]] = relationship(
-        "Task", back_populates="status")
+
+class TaskTag(Base):
+    """
+    Связующая таблица между задачами и тегами.
+    Связь: Task (many) <-> Tag (many).
+    """
+    __tablename__ = "tasktag"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task_id: Mapped[int | None] = mapped_column(
+        ForeignKey("task.id"), nullable=True)
+    tag_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tag.id"), nullable=True)
 
 
 class Tag(Base):
     """Справочник по тегам к задачам."""
-    __tablename__ = "tags"
+    __tablename__ = "tag"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(64), unique=True)
 
-    # Связь many to many (через вспомогательную таблицу):
-    tasks: Mapped[list["Task"]] = relationship(
-        "Task", secondary=TaskTag, back_populates="tags")
-
 
 class Task(Base):
     """Модель задачи для хранения в базе данных."""
-    __tablename__ = "tasks"
+    __tablename__ = "task"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(64))
-    description: Mapped[str | None] = mapped_column(String(264))
-    status_id: Mapped[int | None] = mapped_column(ForeignKey("statuses.id"))
-    deadline_start: Mapped[datetime.date | None] = mapped_column(Date)
-    deadline_end: Mapped[datetime.date | None] = mapped_column(Date)
-
-    # Связь 1 to many:
-    status: Mapped["Status | None"] = relationship(
-        "Status", back_populates="tasks")
-    # Связь many to many (через вспомогательную таблицу):
-    tags: Mapped[list["Tag"]] = relationship(
-        "Tag", secondary=TaskTag, back_populates="tasks")
-    # Связь 1 to many:
-    documents: Mapped[list["Document"]] = relationship(
-        "Document", back_populates="task")
+    description: Mapped[str | None] = mapped_column(
+        String(264), nullable=True)
+    status_id: Mapped[int | None] = mapped_column(
+        ForeignKey("status.id"), nullable=True)
+    deadline_start: Mapped[datetime.date | None] = mapped_column(
+        Date, nullable=True)
+    deadline_end: Mapped[datetime.date | None] = mapped_column(
+        Date, nullable=True)

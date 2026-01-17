@@ -19,8 +19,6 @@ class TaskBase(BaseModel):
         title="Срок выполнения"
     )
 
-    # ???
-    # Когда использовать model_validator?
     @field_validator("deadline")
     @classmethod
     def validate_deadline(cls, value: datetime | None) -> datetime | None:
