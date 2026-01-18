@@ -8,4 +8,12 @@ class FilterParams(BaseModel):
 
     limit: int = Field(default=100, ge=0)
     offset: int = Field(default=0, ge=0)
-    order_by: Literal[поля????]
+    order_by: Literal[
+        "id",
+        "name",
+        "deadline_start",
+        "deadline_end",
+        "status",
+        "tags"
+    ] = "id"
+    order_direction: Literal["asc", "desc"] = "desc"
