@@ -1,75 +1,194 @@
 from datetime import datetime, timezone
 
-from sqlmodel import select
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.connection import SessionDep
 from src.db.models import Task
-from src.model.filters import FilterParams
-from src.repository.tasks.dto import TaskCreateDTO, TaskDTO, TaskUpdateDTO
+from src.model.filters import TaskFilterParams
+from src.repository.tasks.dto import (
+    DocumentDTO,
+    StatusDTO,
+    TagDTO,
+    TaskCreateDTO,
+    TaskResponseDTO,
+    TaskUpdateDTO
+)
 
 
 class TaskRepository:
     """
     Репозиторий для работы с задачами в базе данных.
 
-    Предоставляет CRUD-операции для Task, работая с DTO-объектами.
+    Предоставляет CRUD-операции для Status, Tag, Task, работая с DTO-объектами.
     Изолирует бизнес-логику от реализации базы данных.
     """
-    def __init__(self, session: SessionDep):
+
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, data: TaskCreateDTO) -> TaskDTO:
-        """Создает задачу."""
-        # sels.session.execute(питон строка с sql-запросом)
+    # Статус:
+    async def get_all_statuses(self) -> list[StatusDTO]:
+        """Получает все статусы."""
+        query = text("""
+            SELECT id, name
+            FROM status
+        """)
+        result = await self.session.execute(query)
+        rows = result.fetchall()
 
-        task = Task(
-            name=data.name,
-            description=data.description,
-            deadline=data.deadline,
-            created_at=datetime.now(timezone.utc)
-        )
-        self.session.add(task)
-        await self.session.commit()  # Избавиться, перейти на контексный менеджер.!!!!
-        await self.session.refresh(task)
-        return TaskDTO.model_validate(task)
+        return [StatusDTO(id=row.id, name=row.name) for row in rows]
 
-    async def read_all(self, filters: FilterParams) -> list[TaskDTO]:
-        """Получает все задачи с учётом фильтров."""
-        statement = select(Task).offset(filters.offset).limit(filters.limit)
-        result = await self.session.execute(statement)
-        tasks = result.all()
-        return [TaskDTO.model_validate(task[0]) for task in tasks]
+    async def get_status_by_id(self, status_id: int) -> StatusDTO | None:  # Нужен ли? Или нужен внутри?
+        """Получает статус по его идентефикатору."""
+        query = text("""
+            SELECT id, name
+            FROM status
+            WHERE id = :id
+        """)
+        result = await self.session.execute(query, {"id": status_id})
+        row = result.fetchone()
 
-    async def read_by_id(self, id: int) -> TaskDTO | None:
-        """Получает задачу по его id."""
-        # SQL запрос
-        task = await self.session.get(Task, id)
-        if not task:
+        if not row:
             return None
-        return TaskDTO.model_validate(task)
 
-    async def update(self, id: int, data: TaskUpdateDTO) -> TaskDTO | None:
-        """Обновляет поля задачи."""
-        # 1 запрос SQL (проверили и вернули)
-        task = await self.session.get(Task, id)
-        if not task:
-            return None
-        for field, new_value in data.model_dump(exclude_unset=True).items():
-            setattr(task, field, new_value)
-        await self.session.commit()
-        await self.session.refresh(task)
-        return TaskDTO.model_validate(task)
+        return StatusDTO(id=row.id, name=row.name)
 
-    async def delete(self, id: int) -> bool:
-        """Удаляет задачу. Возвращает True, если задача удалена."""
-        task = await self.session.get(Task, id)
-        if not task:
-            return False
-        await self.session.delete(task)
-        await self.session.commit()
-        return True
+    # # Теги:
+    # async def create_tag(self, data: TagDTO) -> TagDTO | None:
+    #     """создает тег."""
+
+    #     query = text("""
+    #         INSERT INTO tag (name)
+    #         VALUES (:name)
+    #         RETURNING id, name
+    #     """)
+    #     result = await self.session.execute(query, {"name": data.name})
+    #     row = result.fetchone()
+
+    #     if not row:
+    #         raise ValueError("Не удалось создать тег.")
+
+    #     await self.session.commit()
+
+    #     return TagDTO(id=row.id, name=row.name)
+
+    # async def delete_tag(self, tag_id: int) -> bool:
+    #     """Удаляет тег. Возвращает True, если тег удален."""
+
+    #     query = text("""
+    #         DELETE
+    #         FROM tag
+    #         WHERE id = :id
+    #         RETUNRNING id
+    #     """)
+    #     result = await self.session.execute(query, {"id": tag_id})
+    #     row = result.fetchone()
+
+    #     if not row:
+    #         return False
+
+    #     await self.session.commit()
+
+    #     return True
+
+    # # Задачи:
+    # async def create_task(self, data: TaskCreateDTO) -> TaskResponseDTO:
+    #     """Создает задачу."""
+
+    #     # Создаём задачу (только базовые поля).
+    #     query = text("""
+    #         INSERT INTO task (
+    #             name, description, deadline_start, deadline_end, status_id
+    #         )
+    #         VALUES (
+    #             :name, :description, :deadline_start, :deadline_end, :status_id
+    #         )
+    #         RETURNING id, name, description, deadline_start, deadline_end,
+    #                  status_id
+    #     """)
+    #     result = await self.session.execute(
+    #         query,
+    #         {
+    #             "name": data.name,
+    #             "description": data.description,
+    #             "deadline_start": data.deadline_start,
+    #             "deadline_end": data.deadline_end,
+    #             "status_id": data.status_id,
+    #         }
+    #     )
+    #     row = result.fetchone()
+
+    #     if row is None:
+    #         raise ValueError("Не удалось создать задачу.")
+
+    #     await self.session.commit()
+
+
+    #     task_id = row.id
+
+    #     return TaskResponseDTO(
+    #         id=row.id,
+    #         name=row.name,
+    #         description=row.description,
+    #         deadline_start=row.deadline_start,
+    #         deadline_end=row.deadline_end,
+    #         #status=row.status_id
+    #         # тут нужны DTO
+    #         #
+    #     )
+
+    # async def read_all_tasks(
+    #         self, filters: TaskFilterParams) -> list[TaskResponseDTO]:
+    #     """Получает все задачи с учётом фильтров."""
+
+    #     query_str = f"""
+    #         SELECT
+    #             id,
+    #             name,
+    #             description,
+    #             deadline_start,
+    #             deadline_end,
+    #             status_id
+    #         FROM task
+    #         ORDER BY {filters.order_by} {filters.order_direction}
+    #         LIMIT :limit
+    #         OFFSET :offset
+    #     """
+    #     query = text(query_str)
+    #     result = await self.session.execute(
+    #         query,
+    #         {"limit": filters.limit, "offset": filters.offset}
+    #     )
+    #     tasks_rows = result.fetchall()
+    #     tasks = []
+
+    #     for row in tasks_rows:
+    #         tasks.append(TaskResponseDTO(
+    #             id=row.id,
+    #             name=row.name,
+    #             description=row.description,
+    #             deadline_start=row.deadline_start,
+    #             deadline_end=row.deadline_end,
+    #             status=None,
+    #             tags=[],
+    #             documents=[]
+    #         ))
+
+    #     return tasks
+
+    # async def read_task_by_id(self, task_id: int) -> TaskResponseDTO | None:
+    #     """Получает задачу по его id."""
+    #     pass
+
+    # async def update_task(
+    #         self, task_id: int, data: TaskUpdateDTO) -> TaskResponseDTO | None:
+    #     """Обновляет поля задачи."""
+    #     pass
+
+    # async def delete_task(self, task_id: int) -> bool:
+    #     """Удаляет задачу. Возвращает True, если задача удалена."""
+    #     pass
 
 
 # TODO:
-# создать метод get_by_name?????????????????????????????????????????????????????????? придумать методы
-# создать метод get_active
+# создать метод get_task_by_name

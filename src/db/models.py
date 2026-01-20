@@ -20,7 +20,7 @@ class Document(Base):
     name: Mapped[str] = mapped_column(String(128))
     path: Mapped[str] = mapped_column(String(256), unique=True)
     task_id: Mapped[int | None] = mapped_column(
-        ForeignKey("task.id"), nullable=True)  # ??? Если nullable=True - значит можно создать отдельно документ, и он не будет привязан ни к какой задаче. Это правильный подход?
+        ForeignKey("task.id"), nullable=True)
 
 
 class Status(Base):

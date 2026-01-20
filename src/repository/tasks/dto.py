@@ -28,10 +28,7 @@ class TaskCreateDTO(BaseModel):
     description: str | None = None
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
-    # При создании (если необходимо) передаем id:
     status_id: int | None = None
-    tag_ids: list[int] = []
-    document_ids: list[int] = []  # ??? Как при создании таски передавать документы?
 
 
 class TaskResponseDTO(BaseModel):
