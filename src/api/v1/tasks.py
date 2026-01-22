@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
+from fastapi import APIRouter, Depends, Body, HTTPException, Path, status
 
 from src.dependency.tasks import get_task_service
 from src.model.filters import TaskFilterParams
@@ -34,7 +34,7 @@ async def get_all_statuses(
     response_model=TagResponse
 )
 async def create_tag(
-    data: TagCreate,
+    data: Annotated[TagCreate, Body()],
     service: Annotated[TaskService, Depends(get_task_service)]
 ) -> TagResponse:
     return await service.create_tag(data)
@@ -58,7 +58,7 @@ async def delete_tag(
     response_model=TaskResponse
 )
 async def create_task(
-    data: TaskCreate,
+    data: Annotated[TaskCreate, Body()],
     service: Annotated[TaskService, Depends(get_task_service)]
 ) -> TaskResponse:
     return await service.create_task(data)

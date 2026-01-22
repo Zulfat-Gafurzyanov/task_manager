@@ -3,11 +3,11 @@ import datetime
 from pydantic import BaseModel
 
 
-class DocumentDTO(BaseModel):
-    """DTO для документа."""
-    id: int
-    name: str
-    path: str
+# class DocumentDTO(BaseModel):
+#     """DTO для документа."""
+#     id: int
+#     name: str
+#     path: str
 
 
 class StatusDTO(BaseModel):
@@ -46,7 +46,7 @@ class TaskResponseDTO(BaseModel):
     # В ответе (если были созданы) получаем объекты со всеми полями:
     status: StatusDTO | None
     tags: list[TagResponseDTO] = []
-    documents: list[DocumentDTO] = []
+    # documents: list[DocumentDTO] = []
 
 
 class TaskUpdateDTO(BaseModel):
@@ -57,4 +57,4 @@ class TaskUpdateDTO(BaseModel):
     deadline_end: datetime.date | None = None
     status_id: int | None = None
     tag_ids: list[int] | None = None
-    document_ids: list[int] | None = None
+    # document_ids: list[int] | None = None

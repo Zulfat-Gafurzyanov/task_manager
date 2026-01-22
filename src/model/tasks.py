@@ -19,6 +19,8 @@ class TagResponse(BaseModel):
     name: str = Field(title="Тег", max_length=64)
 
 
+# TODO: Document
+
 class TaskBase(BaseModel):
     """Базовая модель для работы с задачами."""
 

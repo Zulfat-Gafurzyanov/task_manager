@@ -35,7 +35,7 @@ class TaskRepository:
         rows = result.fetchall()
         return [StatusDTO(id=row.id, name=row.name) for row in rows]
 
-    async def get_status_by_id(self, status_id: int) -> StatusDTO:  # Нужен ли? Или нужен внутри?
+    async def get_status_by_id(self, status_id: int) -> StatusDTO:  # Нужен ли для API? Или нужен внутри?
         """Получает статус по его идентефикатору."""
         query = text("""
             SELECT id, name
@@ -108,6 +108,9 @@ class TaskRepository:
             if row is None:
                 raise RuntimeError(
                     "БД не вернула данные после создания задачи.")
+            
+            # TODO: изучить JOIN, чтобы не делать еще 1 запрос.
+
             # Проверяем есть ли статус у задачи:
             if row.status_id is not None:
                 status_dto = await self.get_status_by_id(row.status_id)
@@ -124,7 +127,7 @@ class TaskRepository:
         )
 
 
-# TODO:
+# TODO: в чтении добавить фильтры.
     # async def read_all_tasks(
     #         self, filters: TaskFilterParams) -> list[TaskResponseDTO]:
     #     """Получает все задачи с учётом фильтров."""

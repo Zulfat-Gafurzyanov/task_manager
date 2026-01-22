@@ -9,18 +9,18 @@ class Base(DeclarativeBase):
     pass
 
 
-class Document(Base):
-    """
-    Справочник по документам к задаче.
-    Связь: Task (one) <-> Document (many).
-    """
-    __tablename__ = "document"
+# class Document(Base):
+#     """
+#     Справочник по документам к задаче.
+#     Связь: Task (one) <-> Document (many).
+#     """
+#     __tablename__ = "document"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(128))
-    path: Mapped[str] = mapped_column(String(256), unique=True)
-    task_id: Mapped[int | None] = mapped_column(
-        ForeignKey("task.id"), nullable=True)
+#     id: Mapped[int] = mapped_column(primary_key=True)
+#     name: Mapped[str] = mapped_column(String(128))
+#     path: Mapped[str] = mapped_column(String(256), unique=True)
+#     task_id: Mapped[int | None] = mapped_column(
+#         ForeignKey("task.id"), nullable=True)
 
 
 class Status(Base):
