@@ -1,17 +1,20 @@
+from sqlalchemy.exc import IntegrityError
+
 from src.model.filters import TaskFilterParams
-from src.model.tasks import Status
+from src.model.tasks import (
+    Status,
+    TagCreate, TagResponse,
+    TaskCreate, TaskResponse
+)
 from src.repository.tasks.dto import (
-    StatusDTO,
-    TaskCreateDTO,
-    TaskResponseDTO,
-    TaskUpdateDTO
+    TagCreateDTO,
+    TaskCreateDTO, TaskResponseDTO, TaskUpdateDTO
 )
 from src.repository.tasks.tasks import TaskRepository
-
-
-class TaskNotFoundException(Exception):
-    """Исключение, возникающее когда задача не найдена по id."""
-    pass
+from src.exseption.tasks import (
+    ResourceAlreadyExistsException,
+    ResourceNotFoundException
+)
 
 
 class TaskService:
@@ -29,12 +32,41 @@ class TaskService:
     async def get_all_statuses(self) -> list[Status]:
         """Получает все статусы из БД."""
         statuses = await self.repository.get_all_statuses()
-
-        if not statuses:
-            raise ValueError("Список статусов пустой")
-
         return [Status.model_validate(status) for status in statuses]
 
+    # Тег:
+    async def create_tag(self, data: TagCreate) -> TagResponse:
+        """Cоздает тег."""
+        try:
+            tag_dto = TagCreateDTO(name=data.name)
+            created_tag = await self.repository.create_tag(tag_dto)
+            return TagResponse(**created_tag.model_dump())
+        except IntegrityError:
+            raise ResourceAlreadyExistsException("Тег", data.name)
+
+    async def delete_tag(self, tag_id: int) -> None:
+        """Удаляет тег."""
+        try:
+            return await self.repository.delete_tag(tag_id)
+        except ValueError:
+            raise ResourceNotFoundException("Тег", tag_id)
+
+    async def create_task(self, data: TaskCreate) -> TaskResponse:
+        """Создает задачу."""
+        try:
+            task_dto = TaskCreateDTO(
+                name=data.name,
+                description=data.description,
+                deadline_start=data.deadline_start,
+                deadline_end=data.deadline_end,
+                status_id=data.status_id
+            )
+            created_task = await self.repository.create_task(task_dto)
+            return TaskResponse(**created_task.model_dump())
+        except Exception:  # ??? Какой exception обрабатывать?
+            raise
+
+# TODO:
     # def _get_task_or_raise(
     #         self, task: TaskDTO | None, task_id: int) -> TaskDTO:
     #     """Проверяет наличие задачи по id,
@@ -42,10 +74,6 @@ class TaskService:
     #     if not task:
     #         raise TaskNotFoundException(f"Задача с id: {task_id} не найдена.")
     #     return task
-
-    # async def create_task(self, data: TaskCreateDTO) -> TaskDTO:
-    #     """Создает задачу."""
-    #     return await self.repository.create(data)
 
     # async def get_all_tasks(self, filters: FilterParams) -> list[TaskDTO]:
     #     """Получает все задачи с учётом фильтров."""

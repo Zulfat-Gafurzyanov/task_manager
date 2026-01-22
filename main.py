@@ -47,7 +47,7 @@ app = FastAPI(
     }
 )
 
-app.include_router(router_v1, prefix="/api/v1/tasks", tags=["tasks"])
+app.include_router(router_v1, prefix="/api/v1", tags=["tasks"])
 
 
 @app.get("/")
@@ -57,3 +57,6 @@ def root():
         "docs": "/api/v1/docs",
         "redoc": "/api/v1/redoc"
     }
+
+# TODO: Общий хендлер для ловли ошибок по кодам
+# https://fastapi.tiangolo.com/ru/tutorial/handling-errors/#reuse-fastapis-exception-handlers

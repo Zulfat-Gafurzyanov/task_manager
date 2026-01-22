@@ -8,10 +8,8 @@ from src.model.filters import TaskFilterParams
 from src.repository.tasks.dto import (
     DocumentDTO,
     StatusDTO,
-    TagDTO,
-    TaskCreateDTO,
-    TaskResponseDTO,
-    TaskUpdateDTO
+    TagCreateDTO, TagResponseDTO,
+    TaskCreateDTO, TaskResponseDTO, TaskUpdateDTO
 )
 
 
@@ -35,10 +33,9 @@ class TaskRepository:
         """)
         result = await self.session.execute(query)
         rows = result.fetchall()
-
         return [StatusDTO(id=row.id, name=row.name) for row in rows]
 
-    async def get_status_by_id(self, status_id: int) -> StatusDTO | None:  # Нужен ли? Или нужен внутри?
+    async def get_status_by_id(self, status_id: int) -> StatusDTO:  # Нужен ли? Или нужен внутри?
         """Получает статус по его идентефикатору."""
         query = text("""
             SELECT id, name
@@ -47,96 +44,87 @@ class TaskRepository:
         """)
         result = await self.session.execute(query, {"id": status_id})
         row = result.fetchone()
-
         if not row:
-            return None
-
+            raise ValueError(f'Статус с id: {status_id} не найден')
         return StatusDTO(id=row.id, name=row.name)
 
-    # # Теги:
-    # async def create_tag(self, data: TagDTO) -> TagDTO | None:
-    #     """создает тег."""
+    # Теги:
+    async def create_tag(self, data: TagCreateDTO) -> TagResponseDTO:
+        """Cоздает тег."""
+        async with self.session.begin():
+            query = text("""
+                INSERT INTO tag (name)
+                VALUES (:name)
+                RETURNING id, name
+            """)
+            result = await self.session.execute(query, {"name": data.name})
+            row = result.fetchone()
+            if not row:
+                raise RuntimeError("БД не вернула данные после создания тега.")
 
-    #     query = text("""
-    #         INSERT INTO tag (name)
-    #         VALUES (:name)
-    #         RETURNING id, name
-    #     """)
-    #     result = await self.session.execute(query, {"name": data.name})
-    #     row = result.fetchone()
+        return TagResponseDTO(id=row.id, name=row.name)
 
-    #     if not row:
-    #         raise ValueError("Не удалось создать тег.")
+    async def delete_tag(self, tag_id: int) -> None:
+        """Удаляет тег."""
+        async with self.session.begin():
+            query = text("""
+                DELETE
+                FROM tag
+                WHERE id = :id
+                RETURNING id
+            """)
+            result = await self.session.execute(query, {"id": tag_id})
+            row = result.fetchone()
+            if not row:
+                raise ValueError(f"Тег с id: {tag_id} не найден")
 
-    #     await self.session.commit()
+    # Задачи:
+    async def create_task(self, data: TaskCreateDTO) -> TaskResponseDTO:
+        """Создает задачу."""
+        async with self.session.begin():
+            # Создаём задачу (только базовые поля).
+            query = text("""
+                INSERT INTO task (
+                    name, description, deadline_start, deadline_end, status_id
+                )
+                VALUES (
+                    :name, :description, :deadline_start, :deadline_end,
+                    :status_id
+                )
+                RETURNING id, name, description, deadline_start, deadline_end,
+                    status_id
+            """)
+            result = await self.session.execute(
+                query,
+                {
+                    "name": data.name,
+                    "description": data.description,
+                    "deadline_start": data.deadline_start,
+                    "deadline_end": data.deadline_end,
+                    "status_id": data.status_id,
+                }
+            )
+            row = result.fetchone()
+            if row is None:
+                raise RuntimeError(
+                    "БД не вернула данные после создания задачи.")
+            # Проверяем есть ли статус у задачи:
+            if row.status_id is not None:
+                status_dto = await self.get_status_by_id(row.status_id)
+            else:
+                status_dto = None
 
-    #     return TagDTO(id=row.id, name=row.name)
-
-    # async def delete_tag(self, tag_id: int) -> bool:
-    #     """Удаляет тег. Возвращает True, если тег удален."""
-
-    #     query = text("""
-    #         DELETE
-    #         FROM tag
-    #         WHERE id = :id
-    #         RETUNRNING id
-    #     """)
-    #     result = await self.session.execute(query, {"id": tag_id})
-    #     row = result.fetchone()
-
-    #     if not row:
-    #         return False
-
-    #     await self.session.commit()
-
-    #     return True
-
-    # # Задачи:
-    # async def create_task(self, data: TaskCreateDTO) -> TaskResponseDTO:
-    #     """Создает задачу."""
-
-    #     # Создаём задачу (только базовые поля).
-    #     query = text("""
-    #         INSERT INTO task (
-    #             name, description, deadline_start, deadline_end, status_id
-    #         )
-    #         VALUES (
-    #             :name, :description, :deadline_start, :deadline_end, :status_id
-    #         )
-    #         RETURNING id, name, description, deadline_start, deadline_end,
-    #                  status_id
-    #     """)
-    #     result = await self.session.execute(
-    #         query,
-    #         {
-    #             "name": data.name,
-    #             "description": data.description,
-    #             "deadline_start": data.deadline_start,
-    #             "deadline_end": data.deadline_end,
-    #             "status_id": data.status_id,
-    #         }
-    #     )
-    #     row = result.fetchone()
-
-    #     if row is None:
-    #         raise ValueError("Не удалось создать задачу.")
-
-    #     await self.session.commit()
+        return TaskResponseDTO(
+            id=row.id,
+            name=row.name,
+            description=row.description,
+            deadline_start=row.deadline_start,
+            deadline_end=row.deadline_end,
+            status=status_dto
+        )
 
 
-    #     task_id = row.id
-
-    #     return TaskResponseDTO(
-    #         id=row.id,
-    #         name=row.name,
-    #         description=row.description,
-    #         deadline_start=row.deadline_start,
-    #         deadline_end=row.deadline_end,
-    #         #status=row.status_id
-    #         # тут нужны DTO
-    #         #
-    #     )
-
+# TODO:
     # async def read_all_tasks(
     #         self, filters: TaskFilterParams) -> list[TaskResponseDTO]:
     #     """Получает все задачи с учётом фильтров."""

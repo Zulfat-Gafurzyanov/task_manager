@@ -16,8 +16,13 @@ class StatusDTO(BaseModel):
     name: str
 
 
-class TagDTO(BaseModel):
-    """DTO для тега."""
+class TagCreateDTO(BaseModel):
+    """DTO для создания тега."""
+    name: str
+
+
+class TagResponseDTO(BaseModel):
+    """DTO для возврата тега."""
     id: int
     name: str
 
@@ -40,7 +45,7 @@ class TaskResponseDTO(BaseModel):
     deadline_end: datetime.date | None
     # В ответе (если были созданы) получаем объекты со всеми полями:
     status: StatusDTO | None
-    tags: list[TagDTO] = []
+    tags: list[TagResponseDTO] = []
     documents: list[DocumentDTO] = []
 
 

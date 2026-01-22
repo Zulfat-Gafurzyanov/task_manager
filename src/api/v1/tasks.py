@@ -1,18 +1,23 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 
 from src.dependency.tasks import get_task_service
 from src.model.filters import TaskFilterParams
-from src.model.tasks import Status #TaskCreate, TaskResponse, TaskUpdate
+from src.model.tasks import (
+    Status,
+    TagCreate, TagResponse,
+    TaskCreate, TaskResponse, TaskUpdate
+)
 from src.repository.tasks.dto import TaskCreateDTO, TaskUpdateDTO
-from src.service.tasks import TaskNotFoundException, TaskService
+from src.service.tasks import TaskService
 
 router_v1 = APIRouter()
 
 
+# Статус:
 @router_v1.get(
-    "/status/{status_id}",
+    "/status",
     status_code=status.HTTP_200_OK,
     response_model=list[Status]
 )
@@ -20,26 +25,48 @@ async def get_all_statuses(
     service: Annotated[TaskService, Depends(get_task_service)]
 ) -> list[Status]:
     return await service.get_all_statuses()
-    
 
 
-# @router_v1.post(
-#     "",
-#     status_code=status.HTTP_201_CREATED,
-#     response_model=TaskResponse
-# )
-# async def create_task(
-#     data: TaskCreate,
-#     service: Annotated[TaskService, Depends(get_task_service)]
-# ) -> TaskResponse:
-#     """Создает задачу."""
-#     task_dto = TaskCreateDTO(**data.model_dump())
-#     task_db = await service.create_task(task_dto)
-#     return TaskResponse(**task_db.model_dump())
+# Тег:
+@router_v1.post(
+    "/tag",
+    status_code=status.HTTP_201_CREATED,
+    response_model=TagResponse
+)
+async def create_tag(
+    data: TagCreate,
+    service: Annotated[TaskService, Depends(get_task_service)]
+) -> TagResponse:
+    return await service.create_tag(data)
 
+
+@router_v1.delete(
+    "/tag/{tag_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_tag(
+    tag_id: Annotated[int, Path(gt=0)],
+    service: Annotated[TaskService, Depends(get_task_service)]
+) -> None:
+    return await service.delete_tag(tag_id)
+
+
+# Задача:
+@router_v1.post(
+    "/task",
+    status_code=status.HTTP_201_CREATED,
+    response_model=TaskResponse
+)
+async def create_task(
+    data: TaskCreate,
+    service: Annotated[TaskService, Depends(get_task_service)]
+) -> TaskResponse:
+    return await service.create_task(data)
+
+# TODO:
 
 # @router_v1.get(
-#         "",
+#         "task",
 #         status_code=status.HTTP_200_OK,
 #         response_model=list[TaskResponse]
 # )
@@ -59,7 +86,6 @@ async def get_all_statuses(
 # )
 # async def get_task(
 #     # ???
-#     # нужно делать? task_id: Annotated[int, Path(gt=0)] вдруг введут /-1
 #     task_id: int,
 #     service: Annotated[TaskService, Depends(get_task_service)]
 # ) -> TaskResponse:

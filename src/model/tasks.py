@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class Status(BaseModel):
@@ -8,69 +8,51 @@ class Status(BaseModel):
     name: str = Field(title="Статус", max_length=64)
 
 
-# class TaskBase(BaseModel):
-#     """Базовая модель для работы с задачами."""
-#     name: str = Field(
-#         title="Название",
-#         max_length=80
-#     )
-#     description: str | None = Field(
-#         default=None,
-#         title="Описание",
-#         max_length=300
-#     )
-#     deadline: datetime | None = Field(
-#         default=None,
-#         title="Срок выполнения"
-#     )
-
-#     @field_validator("deadline")
-#     @classmethod
-#     def validate_deadline(cls, value: datetime | None) -> datetime | None:
-#         if value is not None and value.tzinfo:
-#             now = datetime.now(timezone.utc)
-#             if value.tzinfo is False:
-#                 raise ValueError(
-#                     "Введите дату в формате utc: 2026-12-31T02:06:16.662Z")
-#             if value <= now:
-#                 raise ValueError(
-#                     'deadline не может быть меньше текущего времени')
-#         return value
+class TagCreate(BaseModel):
+    """Модель для создания тега."""
+    name: str = Field(title="Тег", max_length=64)
 
 
-# class TaskCreate(TaskBase):
-#     """Модель для создания задачи."""
-#     model_config = {
-#         "json_schema_extra": {
-#             "examples": [
-#                 {
-#                     "name": "Изучить FastAPI",
-#                     "description": "1. Изучить Path, Query-параметры",
-#                     "deadline": "2026-12-31T15:53:00+05:00"
-#                 }
-#             ]
-#         }
-#     }
+class TagResponse(BaseModel):
+    """Модель для возврата тега."""
+    id: int
+    name: str = Field(title="Тег", max_length=64)
 
 
-# class TaskResponse(TaskBase):
-#     """Модель для возврата данных задачи."""
-#     id: int
-#     status: bool = Field(
-#         default=True,
-#         title="Статус задачи"
-#     )
-#     created_at: datetime = Field(
-#         title="Время создания"
-#     )
+class TaskBase(BaseModel):
+    """Базовая модель для работы с задачами."""
+
+    name: str = Field(max_length=64)
+    description: str | None = Field(
+        default=None,
+        max_length=264
+    )
+    deadline_start: datetime.date | None = None
+    deadline_end: datetime.date | None = None
+    status_id: int | None = None
+
+# TODO: создать валидацию модели по полям deadline end и start.
+#       Чтобы end > start.
 
 
-# class TaskUpdate(BaseModel):
-#     """
-#     Модель для обновления существующей задачи.
-#     Все поля опциональны - обновляются только переданные значения.
-#     """
-#     name: str | None = None
-#     description: str | None = None
-#     deadline: datetime | None = None
-#     status: bool | None = None
+class TaskCreate(TaskBase):
+    """Модель для создания задачи."""
+    pass
+# TODO: сделать примеры для создания задачи.
+
+
+class TaskResponse(TaskBase):
+    """Модель для возврата данных задачи."""
+    id: int
+
+
+class TaskUpdate(BaseModel):
+    """
+    Модель для обновления существующей задачи.
+    Все поля опциональны - обновляются только переданные значения.
+    """
+    name: str | None = None
+    description: str | None = None
+    deadline_start: datetime.date | None = None
+    deadline_end: datetime.date | None = None
+    status_id: list[int] = []
