@@ -1,1 +1,15 @@
-Generic single-database configuration.
+Применение:
+# Создать миграцию на основе моделей
+alembic revision --autogenerate -m "Initial tables"
+
+# Применить миграцию
+alembic upgrade head
+
+# Откатить последнюю миграцию
+alembic downgrade -1
+
+# Посмотреть текущую версию БД
+alembic current
+
+# Посмотреть историю миграций
+alembic history

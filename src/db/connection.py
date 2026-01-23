@@ -1,20 +1,25 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
-from src.db.models import Base
+from sqlalchemy.ext.asyncio import (
+    async_sessionmaker,
+    create_async_engine,
+    AsyncSession
+)
 
 load_dotenv()
 
-engine = create_async_engine(os.environ['DATABASE_URL'])
-async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+engine = create_async_engine(
+    os.environ['DATABASE_URL'],
+    echo=True  # Убрать в prod.
+    # Добавить в prod:
+    # pool_pre_ping=True,
+    # pool_recycle=3600,
+    )
+async_session_maker = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
 
-
-async def create_db_and_tables():
-    """Создает базу данных и все таблицы."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-        # TODO:
-        # создать статусы при инициализации или через админ-зону?
+# TODO: настройки для prod
