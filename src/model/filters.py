@@ -16,8 +16,7 @@ class TaskFilterParams(BaseModel):
         "name",
         "deadline_start",
         "deadline_end",
-        "status",
-        "tags"
+        "status_id"
     ] = "id"
     order_direction: Literal["asc", "desc"] = "desc"
 

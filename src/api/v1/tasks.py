@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Body, HTTPException, Path, status
 from src.dependency.tasks import get_task_service
 from src.model.filters import TaskFilterParams
 from src.model.tasks import (
-    Status,
+    StatusResponse,
     TagCreate, TagResponse,
     TaskCreate, TaskResponse, TaskUpdate
 )
@@ -19,11 +19,11 @@ router_v1 = APIRouter()
 @router_v1.get(
     "/status",
     status_code=status.HTTP_200_OK,
-    response_model=list[Status]
+    response_model=list[StatusResponse]
 )
 async def get_all_statuses(
     service: Annotated[TaskService, Depends(get_task_service)]
-) -> list[Status]:
+) -> list[StatusResponse]:
     return await service.get_all_statuses()
 
 

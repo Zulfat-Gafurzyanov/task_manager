@@ -2,7 +2,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.model.filters import TaskFilterParams
 from src.model.tasks import (
-    Status,
+    StatusResponse,
     TagCreate, TagResponse,
     TaskCreate, TaskResponse
 )
@@ -29,10 +29,10 @@ class TaskService:
         self.repository = repository
 
     # Статус:
-    async def get_all_statuses(self) -> list[Status]:
+    async def get_all_statuses(self) -> list[StatusResponse]:
         """Получает все статусы из БД."""
         statuses = await self.repository.get_all_statuses()
-        return [Status.model_validate(status) for status in statuses]
+        return [StatusResponse.model_validate(status) for status in statuses]
 
     # Тег:
     async def create_tag(self, data: TagCreate) -> TagResponse:

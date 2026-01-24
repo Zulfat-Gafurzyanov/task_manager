@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.api.v1.tasks import router_v1
-from src.db.connection import create_db_and_tables
+from src.exseption.handlers import register_exception_handlers
 
 
 @asynccontextmanager
@@ -13,13 +13,8 @@ async def lifespan(app: FastAPI):
 
     В текущей реализации создает базу данных таблицы при запуске.
     """
-    # ??? в документации так было написано.
-    # https://fastapi.tiangolo.com/ru/tutorial/sql-databases/#create-database-tables-on-startup
-    # Для продакшн вы, вероятно, будете использовать скрипт миграций, который выполняется до запуска приложения. 🤓
-    await create_db_and_tables()
     yield
 
-# ??? Нужно ли это убирать в отдельный файл? или эти вещи обычно не пишут?
 tags_metadata = [
     {
         "name": "tasks",
@@ -32,7 +27,6 @@ tags_metadata = [
 
 app = FastAPI(
     lifespan=lifespan,
-    # ??? Нужно ли это убирать в отдельный файл? или эти вещи обычно не пишут?
     openapi_tags=tags_metadata,
     openapi_url="/api/v1/openapi.json",
     redoc_url="/api/v1/redoc",
@@ -48,9 +42,10 @@ app = FastAPI(
 )
 
 app.include_router(router_v1, prefix="/api/v1", tags=["tasks"])
+register_exception_handlers(app)
 
 
-@app.get("/")
+@app.get("/", tags=["root"])
 def root():
     return {
         "message": "Task Manager API",
@@ -58,5 +53,4 @@ def root():
         "redoc": "/api/v1/redoc"
     }
 
-# TODO: Общий хендлер для ловли ошибок по кодам
-# https://fastapi.tiangolo.com/ru/tutorial/handling-errors/#reuse-fastapis-exception-handlers
+# TODO: config.py

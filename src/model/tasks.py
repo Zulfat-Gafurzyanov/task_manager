@@ -1,11 +1,14 @@
 import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
-class Status(BaseModel):
+class StatusResponse(BaseModel):
     """Модель для статуса."""
+    id: int
     name: str = Field(title="Статус", max_length=64)
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TagCreate(BaseModel):
@@ -17,6 +20,8 @@ class TagResponse(BaseModel):
     """Модель для возврата тега."""
     id: int
     name: str = Field(title="Тег", max_length=64)
+
+    model_config = ConfigDict(from_attributes=True) 
 
 
 # TODO: Document
@@ -47,6 +52,8 @@ class TaskResponse(TaskBase):
     """Модель для возврата данных задачи."""
     id: int
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class TaskUpdate(BaseModel):
     """
@@ -58,3 +65,7 @@ class TaskUpdate(BaseModel):
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
     status_id: list[int] = []
+
+
+# TODO: TaskWithRelations для тегов и документов.
+# Не забыть добавить model_config = ConfigDict(from_attributes=True)

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.models import Task
 from src.model.filters import TaskFilterParams
 from src.repository.tasks.dto import (
-    DocumentDTO,
+    # DocumentDTO,
     StatusDTO,
     TagCreateDTO, TagResponseDTO,
     TaskCreateDTO, TaskResponseDTO, TaskUpdateDTO
@@ -51,16 +51,15 @@ class TaskRepository:
     # Теги:
     async def create_tag(self, data: TagCreateDTO) -> TagResponseDTO:
         """Cоздает тег."""
-        async with self.session.begin():
-            query = text("""
-                INSERT INTO tag (name)
-                VALUES (:name)
-                RETURNING id, name
-            """)
-            result = await self.session.execute(query, {"name": data.name})
-            row = result.fetchone()
-            if not row:
-                raise RuntimeError("БД не вернула данные после создания тега.")
+        query = text("""
+            INSERT INTO tag (name)
+            VALUES (:name)
+            RETURNING id, name
+        """)
+        result = await self.session.execute(query, {"name": data.name})
+        row = result.fetchone()
+        if not row:
+            raise RuntimeError("БД не вернула данные после создания тега.")
 
         return TagResponseDTO(id=row.id, name=row.name)
 
@@ -141,7 +140,7 @@ class TaskRepository:
     #             deadline_end,
     #             status_id
     #         FROM task
-    #         ORDER BY {filters.order_by} {filters.order_direction}
+    #         ORDER BY {filters.order_by} {filters.order_direction.upper()}
     #         LIMIT :limit
     #         OFFSET :offset
     #     """
