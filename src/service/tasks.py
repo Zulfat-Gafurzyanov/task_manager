@@ -10,6 +10,7 @@ from src.repository.tasks.dto import (
     TagCreateDTO,
     TaskCreateDTO, TaskResponseDTO, TaskUpdateDTO
 )
+from src.repository.cache import CacheRepository
 from src.repository.tasks.tasks import TaskRepository
 from src.exseption.tasks import (
     ResourceAlreadyExistsException,
@@ -25,21 +26,35 @@ class TaskService:
     включая обработку исключений и взаимодействие с репозиторием.
     """
 
-    def __init__(self, repository: TaskRepository):
-        self.repository = repository
+    def __init__(self, task_repo: TaskRepository, cache_repo: CacheRepository):
+        self.task_repo = task_repo
+        self.cache_repo = cache_repo
 
-    # Статус:
+    # ===== Статус =====
     async def get_all_statuses(self) -> list[StatusResponse]:
         """Получает все статусы из БД."""
-        statuses = await self.repository.get_all_statuses()
-        return [StatusResponse.model_validate(status) for status in statuses]
+        # Проверяем кеш:
+        cache_key = "statuses:all"
+        cached = await self.cache_repo.get(cache_key)
+        if cached:
+            return [StatusResponse(**item) for item in cached]
+        # Если нет кеша:
+        statuses = await self.task_repo.get_all_statuses()
+        result = [StatusResponse.model_validate(status) for status in statuses]
+        # Кешируем:
+        await self.cache_repo.set(
+            cache_key,
+            [status.model_dump() for status in result],
+            ttl=3600
+        )
+        return result
 
-    # Тег:
+    # ===== Тег =====
     async def create_tag(self, data: TagCreate) -> TagResponse:
         """Cоздает тег."""
         try:
             tag_dto = TagCreateDTO(name=data.name)
-            created_tag = await self.repository.create_tag(tag_dto)
+            created_tag = await self.task_repo.create_tag(tag_dto)
             return TagResponse(**created_tag.model_dump())
         except IntegrityError:
             raise ResourceAlreadyExistsException("Тег", data.name)
@@ -47,7 +62,7 @@ class TaskService:
     async def delete_tag(self, tag_id: int) -> None:
         """Удаляет тег."""
         try:
-            return await self.repository.delete_tag(tag_id)
+            return await self.task_repo.delete_tag(tag_id)
         except ValueError:
             raise ResourceNotFoundException("Тег", tag_id)
 
@@ -61,7 +76,7 @@ class TaskService:
                 deadline_end=data.deadline_end,
                 status_id=data.status_id
             )
-            created_task = await self.repository.create_task(task_dto)
+            created_task = await self.task_repo.create_task(task_dto)
             return TaskResponse(**created_task.model_dump())
         except Exception:  # ??? Какой exception обрабатывать?
             raise

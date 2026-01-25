@@ -2,18 +2,19 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from src.db.redis import redis_client
 from src.api.v1.tasks import router_v1
 from src.exseption.handlers import register_exception_handlers
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Выполняет инициализацию ресурсов при старте приложения.
-
-    В текущей реализации создает базу данных таблицы при запуске.
-    """
+    """Управление жизненным циклом приложения."""
+    # Инициализация ресурсов.
+    await redis_client.connect()
     yield
+    # Освобождение ресурсов.
+    await redis_client.close()
 
 tags_metadata = [
     {

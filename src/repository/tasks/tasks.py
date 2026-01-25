@@ -24,7 +24,7 @@ class TaskRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    # Статус:
+    # ===== Статус =====
     async def get_all_statuses(self) -> list[StatusDTO]:
         """Получает все статусы."""
         query = text("""
@@ -48,7 +48,7 @@ class TaskRepository:
             raise ValueError(f'Статус с id: {status_id} не найден')
         return StatusDTO(id=row.id, name=row.name)
 
-    # Теги:
+    # ===== Тег =====
     async def create_tag(self, data: TagCreateDTO) -> TagResponseDTO:
         """Cоздает тег."""
         query = text("""
@@ -77,7 +77,7 @@ class TaskRepository:
             if not row:
                 raise ValueError(f"Тег с id: {tag_id} не найден")
 
-    # Задачи:
+    # ===== Задачи =====
     async def create_task(self, data: TaskCreateDTO) -> TaskResponseDTO:
         """Создает задачу."""
         async with self.session.begin():
