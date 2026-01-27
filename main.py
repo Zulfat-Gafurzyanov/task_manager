@@ -1,10 +1,15 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from dotenv import load_dotenv
 
+from src.core.keys import Keys
 from src.db.redis import redis_client
 from src.api.v1.tasks import router_v1
 from src.exseption.handlers import register_exception_handlers
+
+load_dotenv()
 
 
 @asynccontextmanager
@@ -12,6 +17,14 @@ async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения."""
     # Инициализация ресурсов.
     await redis_client.connect()
+
+    # Инициализация ключей шифрования
+    await Keys.initialize(
+        private_key_path=os.environ['PRIVATE_KEY_PATH'],
+        public_key_path=os.environ['PUBLIC_KEY_PATH'],
+        private_key_password=os.environ['PRIVATE_KEY_PASSWORD']
+    )
+
     yield
     # Освобождение ресурсов.
     await redis_client.close()

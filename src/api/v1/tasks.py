@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Body, HTTPException, Path, status
 
-from dependency.dependencies import get_task_service
+from src.dependency.dependencies import get_task_service
 from src.model.filters import TaskFilterParams
 from src.model.tasks import (
     StatusResponse,
