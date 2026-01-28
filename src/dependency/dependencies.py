@@ -7,7 +7,9 @@ from src.db.connection import async_session_maker
 from src.db.redis import redis_client
 from src.repository.cache import CacheRepository
 from src.repository.tasks.tasks import TaskRepository
+from src.repository.users.users import UserRepository
 from src.service.tasks import TaskService
+from src.service.users import UserService
 
 
 async def get_session():
@@ -21,6 +23,7 @@ async def get_session():
             raise
 
 
+# ===== REPOSITORY =====
 def get_task_repository(
         session: Annotated[AsyncSession, Depends(get_session)]
 ) -> TaskRepository:
@@ -34,9 +37,24 @@ def get_cache_repository() -> CacheRepository:
     return CacheRepository(redis)
 
 
+def get_user_repository(
+    session: Annotated[AsyncSession, Depends(get_session)]
+) -> UserRepository:
+    """Dependency для получения репозитория пользователей."""
+    return UserRepository(session)
+
+
+# ===== SERVISE =====
 def get_task_service(
         task_repo: Annotated[TaskRepository, Depends(get_task_repository)],
         cache_repo: Annotated[CacheRepository, Depends(get_cache_repository)]
 ) -> TaskService:
     """Dependency для получения сервисного слоя c кешем."""
     return TaskService(task_repo, cache_repo)
+
+
+def get_user_service(
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+) -> UserService:
+    """Dependency для получения сервисного слоя пользователей."""
+    return UserService(user_repo)

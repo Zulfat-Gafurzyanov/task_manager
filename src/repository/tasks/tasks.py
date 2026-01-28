@@ -1,15 +1,15 @@
-from datetime import datetime, timezone
+# from datetime import datetime, timezone
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.models import Task
-from src.model.filters import TaskFilterParams
+# from src.db.models import Task
+# from src.model.filters import TaskFilterParams
 from src.repository.tasks.dto import (
     # DocumentDTO,
     StatusDTO,
     TagCreateDTO, TagResponseDTO,
-    TaskCreateDTO, TaskResponseDTO, TaskUpdateDTO
+    TaskCreateDTO, TaskResponseDTO, # TaskUpdateDTO
 )
 
 
@@ -107,7 +107,7 @@ class TaskRepository:
             if row is None:
                 raise RuntimeError(
                     "БД не вернула данные после создания задачи.")
-            
+
             # TODO: изучить JOIN, чтобы не делать еще 1 запрос.
 
             # Проверяем есть ли статус у задачи:

@@ -9,6 +9,13 @@ class Base(DeclarativeBase):
     pass
 
 
+class User(Base):
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True)
+    password: Mapped[str] = mapped_column(String(255))
+
 # class Document(Base):
 #     """
 #     Справочник по документам к задаче.
@@ -68,3 +75,4 @@ class Task(Base):
         Date, nullable=True)
     status_id: Mapped[int | None] = mapped_column(
         ForeignKey("status.id"), nullable=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))

@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 from src.core.keys import Keys
 from src.db.redis import redis_client
 from src.api.v1.tasks import router_v1
-from src.exseption.handlers import register_exception_handlers
+from src.api.v1.auth import router_auth
+from src.exception.handlers import register_exception_handlers
 
 load_dotenv()
 
@@ -56,6 +57,7 @@ app = FastAPI(
 )
 
 app.include_router(router_v1, prefix="/api/v1", tags=["tasks"])
+app.include_router(router_auth, prefix="/api/v1/auth", tags=["auth"])
 register_exception_handlers(app)
 
 

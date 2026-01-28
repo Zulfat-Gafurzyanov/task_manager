@@ -12,7 +12,7 @@ from src.repository.tasks.dto import (
 )
 from src.repository.cache import CacheRepository
 from src.repository.tasks.tasks import TaskRepository
-from src.exseption.tasks import (
+from src.exception.exceptions import (
     ResourceAlreadyExistsException,
     ResourceNotFoundException
 )

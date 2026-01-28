@@ -30,3 +30,9 @@ class ResourceNotFoundException(AppException):
         message = f"{resource} с id={resource_id} не найден."
         status_code = status.HTTP_404_NOT_FOUND
         super().__init__(message, status_code)
+
+
+class AuthenticationException(AppException):
+    """Ошибка аутентификации."""
+    def __init__(self, message: str = "Неверный логин или пароль"):
+        super().__init__(message, status_code=401)
