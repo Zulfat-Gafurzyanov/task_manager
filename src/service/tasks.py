@@ -66,7 +66,8 @@ class TaskService:
         except ValueError:
             raise ResourceNotFoundException("Тег", tag_id)
 
-    async def create_task(self, data: TaskCreate) -> TaskResponse:
+    async def create_task(
+            self, data: TaskCreate, user_id: int) -> TaskResponse:
         """Создает задачу."""
         try:
             task_dto = TaskCreateDTO(
@@ -74,7 +75,8 @@ class TaskService:
                 description=data.description,
                 deadline_start=data.deadline_start,
                 deadline_end=data.deadline_end,
-                status_id=data.status_id
+                status_id=data.status_id,
+                user_id=user_id
             )
             created_task = await self.task_repo.create_task(task_dto)
             return TaskResponse(**created_task.model_dump())

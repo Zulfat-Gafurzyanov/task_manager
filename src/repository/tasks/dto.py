@@ -34,6 +34,7 @@ class TaskCreateDTO(BaseModel):
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
     status_id: int | None = None
+    user_id: int
 
 
 class TaskResponseDTO(BaseModel):

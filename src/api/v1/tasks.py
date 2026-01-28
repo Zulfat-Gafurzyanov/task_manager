@@ -9,6 +9,7 @@ from src.model.tasks import (
     TagCreate, TagResponse,
     TaskCreate, TaskResponse, TaskUpdate
 )
+from src.core.security import Security
 from src.repository.tasks.dto import TaskCreateDTO, TaskUpdateDTO
 from src.service.tasks import TaskService
 
@@ -35,7 +36,7 @@ async def get_all_statuses(
 )
 async def create_tag(
     data: Annotated[TagCreate, Body()],
-    service: Annotated[TaskService, Depends(get_task_service)]
+    service: Annotated[TaskService, Depends(get_task_service)],
 ) -> TagResponse:
     return await service.create_tag(data)
 
@@ -59,9 +60,10 @@ async def delete_tag(
 )
 async def create_task(
     data: Annotated[TaskCreate, Body()],
-    service: Annotated[TaskService, Depends(get_task_service)]
+    service: Annotated[TaskService, Depends(get_task_service)],
+    current_user_id: Annotated[int, Depends(Security.get_current_user)]
 ) -> TaskResponse:
-    return await service.create_task(data)
+    return await service.create_task(data, current_user_id)
 
 # TODO:
 

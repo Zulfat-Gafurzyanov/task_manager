@@ -37,6 +37,7 @@ class TaskBase(BaseModel):
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
     status_id: int | None = None
+    user_id: int
 
 # TODO: создать валидацию модели по полям deadline end и start.
 #       Чтобы end > start.

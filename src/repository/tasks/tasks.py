@@ -84,11 +84,12 @@ class TaskRepository:
             # Создаём задачу (только базовые поля).
             query = text("""
                 INSERT INTO task (
-                    name, description, deadline_start, deadline_end, status_id
+                    name, description, deadline_start, deadline_end,
+                    status_id, user_id
                 )
                 VALUES (
                     :name, :description, :deadline_start, :deadline_end,
-                    :status_id
+                    :status_id, :user_id
                 )
                 RETURNING id, name, description, deadline_start, deadline_end,
                     status_id
@@ -101,6 +102,7 @@ class TaskRepository:
                     "deadline_start": data.deadline_start,
                     "deadline_end": data.deadline_end,
                     "status_id": data.status_id,
+                    "user_id": data.user_id,
                 }
             )
             row = result.fetchone()
