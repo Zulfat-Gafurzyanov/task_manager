@@ -35,7 +35,7 @@ class TaskRepository:
         rows = result.fetchall()
         return [StatusDTO(id=row.id, name=row.name) for row in rows]
 
-    async def get_status_by_id(self, status_id: int) -> StatusDTO:  # Нужен ли для API? Или нужен внутри?
+    async def get_status_by_id(self, status_id: int) -> StatusDTO:
         """Получает статус по его идентефикатору."""
         query = text("""
             SELECT id, name
@@ -49,6 +49,7 @@ class TaskRepository:
         return StatusDTO(id=row.id, name=row.name)
 
     # ===== Тег =====
+
     async def create_tag(self, data: TagCreateDTO) -> TagResponseDTO:
         """Cоздает тег."""
         query = text("""
@@ -78,6 +79,7 @@ class TaskRepository:
                 raise ValueError(f"Тег с id: {tag_id} не найден")
 
     # ===== Задачи =====
+
     async def create_task(self, data: TaskCreateDTO) -> TaskResponseDTO:
         """Создает задачу."""
         async with self.session.begin():
@@ -107,7 +109,7 @@ class TaskRepository:
             if row is None:
                 raise RuntimeError(
                     "БД не вернула данные после создания задачи.")
-            
+
             # TODO: изучить JOIN, чтобы не делать еще 1 запрос.
 
             # Проверяем есть ли статус у задачи:
@@ -126,59 +128,7 @@ class TaskRepository:
         )
 
 
-# TODO: в чтении добавить фильтры.
-    # async def read_all_tasks(
-    #         self, filters: TaskFilterParams) -> list[TaskResponseDTO]:
-    #     """Получает все задачи с учётом фильтров."""
-
-    #     query_str = f"""
-    #         SELECT
-    #             id,
-    #             name,
-    #             description,
-    #             deadline_start,
-    #             deadline_end,
-    #             status_id
-    #         FROM task
-    #         ORDER BY {filters.order_by} {filters.order_direction.upper()}
-    #         LIMIT :limit
-    #         OFFSET :offset
-    #     """
-    #     query = text(query_str)
-    #     result = await self.session.execute(
-    #         query,
-    #         {"limit": filters.limit, "offset": filters.offset}
-    #     )
-    #     tasks_rows = result.fetchall()
-    #     tasks = []
-
-    #     for row in tasks_rows:
-    #         tasks.append(TaskResponseDTO(
-    #             id=row.id,
-    #             name=row.name,
-    #             description=row.description,
-    #             deadline_start=row.deadline_start,
-    #             deadline_end=row.deadline_end,
-    #             status=None,
-    #             tags=[],
-    #             documents=[]
-    #         ))
-
-    #     return tasks
-
-    # async def read_task_by_id(self, task_id: int) -> TaskResponseDTO | None:
-    #     """Получает задачу по его id."""
-    #     pass
-
-    # async def update_task(
-    #         self, task_id: int, data: TaskUpdateDTO) -> TaskResponseDTO | None:
-    #     """Обновляет поля задачи."""
-    #     pass
-
-    # async def delete_task(self, task_id: int) -> bool:
-    #     """Удаляет задачу. Возвращает True, если задача удалена."""
-    #     pass
-
+# TODO: в чтение добавить фильтры.
 
 # TODO:
-# создать метод get_task_by_name
+# создать методы update и delete

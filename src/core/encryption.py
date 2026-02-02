@@ -2,6 +2,9 @@ import os
 import base64
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Encryption:
@@ -12,7 +15,7 @@ class Encryption:
     def _get_key(cls) -> bytes:
         """Получает ключ из окружения и декодирует из base64."""
         if cls._key is None:
-            raw = os.environ.get("ENCRYPTION_KEY")  # os.environ.get нужно ли заменить гетенвом и создать в .енв "ENCRYPTION_KEY"
+            raw = os.environ['ENCRYPTION_KEY']
             if not raw:
                 raise RuntimeError("ENCRYPTION_KEY не задан.")
             cls._key = base64.b64decode(raw)

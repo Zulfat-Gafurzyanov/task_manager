@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from sqlalchemy import Date, ForeignKey, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -79,7 +80,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     uuid: Mapped[str] = mapped_column(
-        String(36), unique=True, default=lambda: str(_uuid.uuid4()))
+        String(36), unique=True, default=lambda: str(uuid.uuid4()))
     username: Mapped[str] = mapped_column(String(64), unique=True)
     password: Mapped[str] = mapped_column(String(256))
     email: Mapped[str] = mapped_column(String(256))

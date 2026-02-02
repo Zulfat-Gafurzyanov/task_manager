@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class UserBaseSchema(BaseModel):
@@ -19,7 +19,10 @@ class UserBaseWithEmail(BaseModel):
 
 
 class UserBaseWithPasswordAndEmail(BaseModel):
-    """Модель пользователя с email и хешем пароля (для внутреннего использования)."""
+    """
+    Модель пользователя с email и хешем пароля
+    (для внутреннего использования).
+    """
     id: int
     username: str
     email: str
