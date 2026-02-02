@@ -68,3 +68,39 @@ class Task(Base):
         Date, nullable=True)
     status_id: Mapped[int | None] = mapped_column(
         ForeignKey("status.id"), nullable=True)
+
+
+# ===== Пользователи и роли =====
+
+
+class User(Base):
+    """Модель пользователя."""
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    uuid: Mapped[str] = mapped_column(
+        String(36), unique=True, default=lambda: str(_uuid.uuid4()))
+    username: Mapped[str] = mapped_column(String(64), unique=True)
+    password: Mapped[str] = mapped_column(String(256))
+    email: Mapped[str] = mapped_column(String(256))
+    phone: Mapped[str | None] = mapped_column(String(256), nullable=True)
+
+
+class Rule(Base):
+    """Справочник ролей/прав доступа."""
+    __tablename__ = "rule"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True)
+
+
+class UserRule(Base):
+    """
+    Связующая таблица между пользователями и ролями.
+    Связь: User (many) <-> Rule (many).
+    """
+    __tablename__ = "userrule"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    rule_id: Mapped[int] = mapped_column(ForeignKey("rule.id"))
