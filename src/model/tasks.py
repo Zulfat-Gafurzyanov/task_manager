@@ -1,56 +1,71 @@
 import datetime
+from typing_extensions import Self
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class StatusResponse(BaseModel):
-    """Модель для статуса."""
-    id: int
-    name: str = Field(title="Статус", max_length=64)
+    id: int = Field(gt=0)
+    name: str = Field(max_length=64)
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class TagCreate(BaseModel):
-    """Модель для создания тега."""
-    name: str = Field(title="Тег", max_length=64)
+    name: str = Field(max_length=64)
 
 
 class TagResponse(BaseModel):
-    """Модель для возврата тега."""
-    id: int
-    name: str = Field(title="Тег", max_length=64)
-
-    model_config = ConfigDict(from_attributes=True) 
-
-
-# TODO: Document
-
-class TaskBase(BaseModel):
-    """Базовая модель для работы с задачами."""
-
+    id: int = Field(gt=0)
     name: str = Field(max_length=64)
-    description: str | None = Field(
-        default=None,
-        max_length=264
-    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TaskCreate(BaseModel):
+    name: str = Field(max_length=512)
+    description: str | None = Field(default=None, max_length=2048)
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
     status_id: int | None = None
 
-# TODO: создать валидацию модели по полям deadline end и start.
-#       Чтобы end > start.
+    @model_validator(mode='after')
+    def check_deadline(self) -> Self:
+        """Проверка, что дата начала раньше даты окончания."""
+        if self.deadline_start and self.deadline_end:
+            if self.deadline_start > self.deadline_end:
+                raise ValueError(
+                    'Дата окончания не может быть раньше даты начала')
+        return self
+
+    @model_validator(mode='after')
+    def check_dates_not_in_past(self) -> Self:
+        """Проверка, что даты не в прошлом."""
+        today = datetime.date.today()
+        if self.deadline_start and self.deadline_start < today:
+            raise ValueError('Дата начала не может быть в прошлом')
+        if self.deadline_end and self.deadline_end < today:
+            raise ValueError('Дата окончания не может быть в прошлом')
+        return self
 
 
-class TaskCreate(TaskBase):
-    """Модель для создания задачи."""
-    pass
-# TODO: сделать примеры для создания задачи.
+class DocumentResponse(BaseModel):
+    id: int = Field(gt=0)
+    name: str = Field(max_length=128)
+    path: str = Field(max_length=256)
+
+    model_config = ConfigDict(from_attributes=True)
 
 
-class TaskResponse(TaskBase):
-    """Модель для возврата данных задачи."""
-    id: int
+class TaskResponse(BaseModel):
+    id: int = Field(gt=0)
+    name: str = Field(max_length=512)
+    description: str | None = Field(default=None, max_length=2048)
+    deadline_start: datetime.date | None = None
+    deadline_end: datetime.date | None = None
+    status: StatusResponse | None = None
+    tags: list[TagResponse] = Field(default_factory=list)
+    documents: list[DocumentResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -60,12 +75,17 @@ class TaskUpdate(BaseModel):
     Модель для обновления существующей задачи.
     Все поля опциональны - обновляются только переданные значения.
     """
-    name: str | None = None
-    description: str | None = None
+    name: str | None = Field(default=None, max_length=512)
+    description: str | None = Field(default=None, max_length=2048)
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
-    status_id: list[int] = []
+    status_id: int | None = None
 
-
-# TODO: TaskWithRelations для тегов и документов.
-# Не забыть добавить model_config = ConfigDict(from_attributes=True)
+    @model_validator(mode='after')
+    def check_deadline(self) -> Self:
+        """Проверка, что дата начала раньше даты окончания."""
+        if self.deadline_start and self.deadline_end:
+            if self.deadline_start > self.deadline_end:
+                raise ValueError(
+                    'Дата окончания не может быть раньше даты начала')
+        return self

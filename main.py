@@ -3,11 +3,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 from src.core.keys import Keys
+from src.db.connection import async_session_maker
 from src.db.redis import redis_client
-from src.api.v1.tasks import router_v1
-from src.exseption.handlers import register_exception_handlers
+from src.api.v1.tasks import router_v1 as task_router
+from src.api.v1.users import router_v1 as users_router
+from src.exception.handlers import register_exception_handlers
 
 load_dotenv()
 
@@ -15,7 +18,7 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения."""
-    # Инициализация ресурсов.
+    # Инициализация редис.
     await redis_client.connect()
 
     # Инициализация ключей шифрования
@@ -25,8 +28,20 @@ async def lifespan(app: FastAPI):
         private_key_password=os.environ['PRIVATE_KEY_PASSWORD']
     )
 
+    # Предустановка статусов
+    async with async_session_maker() as session:
+        result = await session.execute(text("""
+            SELECT COUNT(*)
+            FROM status
+        """))
+        if result.scalar() == 0:
+            async with session.begin():
+                await session.execute(text("""
+                    INSERT INTO status (name) VALUES
+                    ('Новая'), ('В работе'), ('На проверке'), ('Завершена')
+                """))
+
     yield
-    # Освобождение ресурсов.
     await redis_client.close()
 
 tags_metadata = [
@@ -36,15 +51,22 @@ tags_metadata = [
             "**Управление задачами**: создание, чтение, обновление и "
             "удаление задач."
         )
+    },
+    {
+        "name": "auth",
+        "description": (
+            "**Аутентификация и авторизация**: регистрация, вход, "
+            "обновление токенов."
+        )
     }
 ]
 
 app = FastAPI(
     lifespan=lifespan,
     openapi_tags=tags_metadata,
-    openapi_url="/api/v1/openapi.json",
-    redoc_url="/api/v1/redoc",
-    docs_url="/api/v1/docs",
+    openapi_url="/openapi.json",
+    redoc_url="/redoc",
+    docs_url="/docs",
     title="Task Manager API",
     description=("**Сервис** для управления вашими задачами."),
     version="1.0",
@@ -55,7 +77,8 @@ app = FastAPI(
     }
 )
 
-app.include_router(router_v1, prefix="/api/v1", tags=["tasks"])
+app.include_router(task_router, prefix="/api/v1", tags=["task"])
+app.include_router(users_router, prefix="/api/v1/auth", tags=["user"])
 register_exception_handlers(app)
 
 
@@ -63,8 +86,8 @@ register_exception_handlers(app)
 def root():
     return {
         "message": "Task Manager API",
-        "docs": "/api/v1/docs",
-        "redoc": "/api/v1/redoc"
+        "docs": "/docs",
+        "redoc": "/redoc"
     }
 
 # TODO: config.py

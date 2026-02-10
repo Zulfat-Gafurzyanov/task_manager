@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.exseption.tasks import AppException
+from exception.exceptions import AppException
 
 
 async def app_exception_handler(request: Request, exception):
@@ -17,5 +17,4 @@ async def app_exception_handler(request: Request, exception):
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Регистрация обработчиков исключений."""
-
     app.add_exception_handler(AppException, app_exception_handler)

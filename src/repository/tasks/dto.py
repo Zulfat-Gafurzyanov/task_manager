@@ -1,13 +1,20 @@
 import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-# class DocumentDTO(BaseModel):
-#     """DTO для документа."""
-#     id: int
-#     name: str
-#     path: str
+class DocumentCreateDTO(BaseModel):
+    """DTO для создания документа."""
+    name: str
+    path: str
+    task_id: int
+
+
+class DocumentDTO(BaseModel):
+    """DTO для документа."""
+    id: int
+    name: str
+    path: str
 
 
 class StatusDTO(BaseModel):
@@ -19,6 +26,7 @@ class StatusDTO(BaseModel):
 class TagCreateDTO(BaseModel):
     """DTO для создания тега."""
     name: str
+    user_id: int
 
 
 class TagResponseDTO(BaseModel):
@@ -34,6 +42,7 @@ class TaskCreateDTO(BaseModel):
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
     status_id: int | None = None
+    user_id: int
 
 
 class TaskResponseDTO(BaseModel):
@@ -43,10 +52,9 @@ class TaskResponseDTO(BaseModel):
     description: str | None
     deadline_start: datetime.date | None
     deadline_end: datetime.date | None
-    # В ответе (если были созданы) получаем объекты со всеми полями:
     status: StatusDTO | None
-    tags: list[TagResponseDTO] = []
-    # documents: list[DocumentDTO] = []
+    tags: list[TagResponseDTO] = Field(default_factory=list)
+    documents: list[DocumentDTO] = Field(default_factory=list)
 
 
 class TaskUpdateDTO(BaseModel):
@@ -56,5 +64,4 @@ class TaskUpdateDTO(BaseModel):
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
     status_id: int | None = None
-    tag_ids: list[int] | None = None
-    # document_ids: list[int] | None = None
+    tags: list[TagResponseDTO] | None = None
