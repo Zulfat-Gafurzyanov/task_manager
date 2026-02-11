@@ -46,14 +46,14 @@ async def lifespan(app: FastAPI):
 
 tags_metadata = [
     {
-        "name": "tasks",
+        "name": "task",
         "description": (
             "**Управление задачами**: создание, чтение, обновление и "
             "удаление задач."
         )
     },
     {
-        "name": "auth",
+        "name": "user",
         "description": (
             "**Аутентификация и авторизация**: регистрация, вход, "
             "обновление токенов."
@@ -80,14 +80,5 @@ app = FastAPI(
 app.include_router(task_router, prefix="/api/v1", tags=["task"])
 app.include_router(users_router, prefix="/api/v1/auth", tags=["user"])
 register_exception_handlers(app)
-
-
-@app.get("/", tags=["root"])
-def root():
-    return {
-        "message": "Task Manager API",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
 
 # TODO: config.py

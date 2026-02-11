@@ -148,14 +148,12 @@ class TaskService:
     async def add_tag_to_task(
         self, task_id: int, tag_id: int, user_id: int
     ) -> None:
-        await self.task_repo.check_task_ownership(task_id, user_id)
         await self.task_repo.add_tag_to_task(task_id, tag_id, user_id)
 
     async def remove_tag_from_task(
         self, task_id: int, tag_id: int, user_id: int
     ) -> None:
-        await self.task_repo.check_task_ownership(task_id, user_id)
-        await self.task_repo.remove_tag_from_task(task_id, tag_id)
+        await self.task_repo.remove_tag_from_task(task_id, tag_id, user_id)
 
     # ===== Document =====
 
@@ -163,8 +161,6 @@ class TaskService:
         self, task_id: int, file: UploadFile, user_id: int
     ) -> DocumentResponse:
         """Сохраняет файл на диск и создает запись в БД."""
-        await self.task_repo.check_task_ownership(task_id, user_id)
-
         # Сохраняем файл на диск
         file_path = Path(f"uploads/{task_id}/{uuid.uuid4()}_{file.filename}")
         file_path.parent.mkdir(parents=True, exist_ok=True)

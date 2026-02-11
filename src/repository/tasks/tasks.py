@@ -389,6 +389,8 @@ class TaskRepository:
         """Добавляет тег к задаче."""
         try:
             async with self.session.begin():
+                await self.check_task_ownership(task_id, user_id)
+
                 # Проверяем что тег принадлежит пользователю
                 check_query = text("""
                     SELECT id FROM tag
@@ -414,9 +416,13 @@ class TaskRepository:
                 "Связь", f"задачи {task_id} с тегом {tag_id}"
             )
 
-    async def remove_tag_from_task(self, task_id: int, tag_id: int) -> None:
+    async def remove_tag_from_task(
+        self, task_id: int, tag_id: int, user_id: int
+    ) -> None:
         """Удаляет тег у задачи."""
         async with self.session.begin():
+            await self.check_task_ownership(task_id, user_id)
+
             query = text("""
                 DELETE FROM tasktag
                 WHERE task_id = :task_id AND tag_id = :tag_id
@@ -439,9 +445,8 @@ class TaskRepository:
         self, data: DocumentCreateDTO, user_id: int
     ) -> DocumentDTO:
         """Создает документ."""
-        await self.check_task_ownership(data.task_id, user_id)
-
         async with self.session.begin():
+            await self.check_task_ownership(data.task_id, user_id)
             query = text("""
                 INSERT INTO document (name, path, task_id)
                 VALUES (:name, :path, :task_id)

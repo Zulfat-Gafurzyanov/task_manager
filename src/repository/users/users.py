@@ -1,7 +1,9 @@
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from exception.exceptions import (
+from src.exception.exceptions import (
+    ResourceAlreadyExistsException,
     ResourceNotCreatedException,
     ResourceByIdNotFoundException,
     ResourceByNameNotFoundException
@@ -79,16 +81,21 @@ class UserRepository:
                 VALUES (:username, :password, :email, :phone, :role)
                 RETURNING id, username, role
             """)
-            result = await self.session.execute(
-                query,
-                {
-                    "username": data.username,
-                    "password": data.password,
-                    "email": data.email,
-                    "phone": data.phone,
-                    "role": data.role
-                }
-            )
+            try:
+                result = await self.session.execute(
+                    query,
+                    {
+                        "username": data.username,
+                        "password": data.password,
+                        "email": data.email,
+                        "phone": data.phone,
+                        "role": data.role
+                    }
+                )
+            except IntegrityError:
+                raise ResourceAlreadyExistsException(
+                    "Пользователь", data.username
+                )
             row = result.fetchone()
             if not row:
                 raise ResourceNotCreatedException("Пользователя")

@@ -11,10 +11,8 @@ load_dotenv()
 
 engine = create_async_engine(
     os.environ['DATABASE_URL'],
-    echo=True  # Убрать в prod.
-    # Добавить в prod:
-    # pool_pre_ping=True,
-    # pool_recycle=3600,
+    echo=True,  # Убрать в prod.
+    pool_pre_ping=True,
     )
 async_session_maker = async_sessionmaker(
     engine,
