@@ -1,5 +1,9 @@
 from redis.asyncio import Redis
 
+STATUS_ALL_KEY = "statuses:all"
+USER_KEY = "user:{user_id}"
+TOKEN_KEY = "user:{user_id}:token:{jti}"
+
 
 class CacheRepository:
     """Репозиторий для работы с Redis кешем."""
@@ -27,14 +31,14 @@ class CacheRepository:
         if keys:
             await self.redis.delete(*keys)
 
-    @staticmethod
-    def key_all_statuses() -> str:
-        return "statuses:all"
+    @property
+    def key_all_statuses(self) -> str:
+        return STATUS_ALL_KEY
 
     @staticmethod
     def key_user(user_id: int) -> str:
-        return f"user:{user_id}"
+        return USER_KEY.format(user_id=user_id)
 
     @staticmethod
     def key_token(user_id: int, jti: str) -> str:
-        return f"user:{user_id}:token:{jti}"
+        return TOKEN_KEY.format(user_id=user_id, jti=jti)

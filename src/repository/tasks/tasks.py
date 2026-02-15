@@ -107,16 +107,16 @@ class TaskRepository:
                     query, {"name": data.name, "user_id": data.user_id}
                 )
                 row = result.fetchone()
-
-                if not row:
-                    raise ResourceNotCreatedException("Тег")
-
-                return TagResponseDTO(
-                    id=row.id,
-                    name=row.name
-                )
         except IntegrityError:
             raise ResourceAlreadyExistsException("Тег", data.name)
+
+        if not row:
+            raise ResourceNotCreatedException("Тег")
+
+        return TagResponseDTO(
+            id=row.id,
+            name=row.name
+        )
 
     async def delete_tag(self, tag_id: int, user_id: int) -> None:
         """Удаляет тег (только если принадлежит пользователю)."""
@@ -130,8 +130,9 @@ class TaskRepository:
                 query, {"id": tag_id, "user_id": user_id}
             )
             row = result.fetchone()
-            if not row:
-                raise ResourceByIdNotFoundException("Тег", tag_id)
+
+        if not row:
+            raise ResourceByIdNotFoundException("Тег", tag_id)
 
     # ===== Task =====
 
@@ -152,11 +153,11 @@ class TaskRepository:
                         deadline_end, status_id
                 )
                 SELECT
-                    nt.id, nt.name, nt.description, nt.deadline_start,
-                    nt.deadline_end,
-                    s.id as status_id, s.name as status_name
-                FROM new_task nt
-                LEFT JOIN status s ON nt.status_id = s.id
+                    new_task.id, new_task.name, new_task.description,
+                    new_task.deadline_start, new_task.deadline_end,
+                    status.id as status_id, status.name as status_name
+                FROM new_task
+                LEFT JOIN status ON new_task.status_id = status.id
             """)
             result = await self.session.execute(
                 query,
@@ -170,16 +171,17 @@ class TaskRepository:
                 }
             )
             row = result.fetchone()
-            if not row:
-                raise ResourceNotCreatedException("Задачу")
 
-            # Формируем статус, если он есть
-            status_dto = None
-            if row.status_id:
-                status_dto = StatusDTO(
-                    id=row.status_id,
-                    name=row.status_name
-                )
+        if not row:
+            raise ResourceNotCreatedException("Задачу")
+
+        # Формируем статус, если он есть
+        status_dto = None
+        if row.status_id:
+            status_dto = StatusDTO(
+                id=row.status_id,
+                name=row.status_name
+            )
 
         return TaskResponseDTO(
             id=row.id,
@@ -196,12 +198,13 @@ class TaskRepository:
         """Получает задачи пользователя с фильтрами."""
         query = text(f"""
             SELECT
-                t.id, t.name, t.description, t.deadline_start, t.deadline_end,
-                s.id as status_id, s.name as status_name
-            FROM task t
-            LEFT JOIN status s ON t.status_id = s.id
-            WHERE t.user_id = :user_id
-            ORDER BY t.{filters.order_by} {filters.order_direction}
+                task.id, task.name, task.description,
+                task.deadline_start, task.deadline_end,
+                status.id as status_id, status.name as status_name
+            FROM task
+            LEFT JOIN status ON task.status_id = status.id
+            WHERE task.user_id = :user_id
+            ORDER BY task.{filters.order_by} {filters.order_direction}
             LIMIT :limit OFFSET :offset
         """)
         result = await self.session.execute(
@@ -261,11 +264,12 @@ class TaskRepository:
         """Получает задачу по ID (только если принадлежит пользователю)."""
         query = text("""
             SELECT
-                t.id, t.name, t.description, t.deadline_start, t.deadline_end,
-                s.id as status_id, s.name as status_name
-            FROM task t
-            LEFT JOIN status s ON t.status_id = s.id
-            WHERE t.id = :id AND t.user_id = :user_id
+                task.id, task.name, task.description,
+                task.deadline_start, task.deadline_end,
+                status.id as status_id, status.name as status_name
+            FROM task
+            LEFT JOIN status ON task.status_id = status.id
+            WHERE task.id = :id AND task.user_id = :user_id
         """)
         result = await self.session.execute(
             query, {"id": task_id, "user_id": user_id}
@@ -335,8 +339,8 @@ class TaskRepository:
             result = await self.session.execute(query, params)
             row = result.fetchone()
 
-            if not row:
-                raise ResourceByIdNotFoundException("Задача", task_id)
+        if not row:
+            raise ResourceByIdNotFoundException("Задача", task_id)
 
         return await self.get_task_by_id(task_id, user_id)
 
@@ -355,8 +359,8 @@ class TaskRepository:
             )
             row = result.fetchone()
 
-            if not row:
-                raise ResourceByIdNotFoundException("Задача", task_id)
+        if not row:
+            raise ResourceByIdNotFoundException("Задача", task_id)
 
     # ===== TaskTag =====
 
@@ -365,11 +369,11 @@ class TaskRepository:
     ) -> list[TagResponseDTO]:
         """Получает все теги задачи."""
         query = text("""
-            SELECT t.id, t.name
-            FROM tag t
-            INNER JOIN tasktag tt ON t.id = tt.tag_id
-            INNER JOIN task tk ON tt.task_id = tk.id
-            WHERE tt.task_id = :task_id AND tk.user_id = :user_id
+            SELECT tag.id, tag.name
+            FROM tag
+            INNER JOIN tasktag ON tag.id = tasktag.tag_id
+            INNER JOIN task ON tasktag.task_id = task.id
+            WHERE tasktag.task_id = :task_id AND task.user_id = :user_id
         """)
         result = await self.session.execute(
             query, {"task_id": task_id, "user_id": user_id}
@@ -434,10 +438,10 @@ class TaskRepository:
             )
             row = result.fetchone()
 
-            if not row:
-                raise ResourceByIdNotFoundException(
-                    "Связь задачи с тегом", tag_id
-                )
+        if not row:
+            raise ResourceByIdNotFoundException(
+                "Связь задачи с тегом", tag_id
+            )
 
     # ===== Document =====
 
@@ -458,24 +462,25 @@ class TaskRepository:
                 "task_id": data.task_id,
             })
             row = result.fetchone()
-            if not row:
-                raise ResourceNotCreatedException("Документ")
 
-            return DocumentDTO(
-                id=row.id,
-                name=row.name,
-                path=row.path
-            )
+        if not row:
+            raise ResourceNotCreatedException("Документ")
+
+        return DocumentDTO(
+            id=row.id,
+            name=row.name,
+            path=row.path
+        )
 
     async def get_task_documents(
         self, task_id: int, user_id: int
     ) -> list[DocumentDTO]:
         """Получает все документы задачи."""
         query = text("""
-            SELECT d.id, d.name, d.path
-            FROM document d
-            INNER JOIN task t ON d.task_id = t.id
-            WHERE d.task_id = :task_id AND t.user_id = :user_id
+            SELECT document.id, document.name, document.path
+            FROM document
+            INNER JOIN task ON document.task_id = task.id
+            WHERE document.task_id = :task_id AND task.user_id = :user_id
         """)
         result = await self.session.execute(
             query, {"task_id": task_id, "user_id": user_id}
@@ -496,12 +501,12 @@ class TaskRepository:
         """Удаляет документ (только если задача принадлежит пользователю)."""
         async with self.session.begin():
             query = text("""
-                DELETE FROM document d
-                USING task t
-                WHERE d.id = :id
-                    AND d.task_id = t.id
-                    AND t.user_id = :user_id
-                RETURNING d.id, d.name, d.path
+                DELETE FROM document
+                USING task
+                WHERE document.id = :id
+                    AND document.task_id = task.id
+                    AND task.user_id = :user_id
+                RETURNING document.id, document.name, document.path
             """)
             result = await self.session.execute(
                 query,
@@ -509,11 +514,11 @@ class TaskRepository:
             )
             row = result.fetchone()
 
-            if not row:
-                raise ResourceByIdNotFoundException("Документ", document_id)
+        if not row:
+            raise ResourceByIdNotFoundException("Документ", document_id)
 
-            return DocumentDTO(
-                id=row.id,
-                name=row.name,
-                path=row.path
-            )
+        return DocumentDTO(
+            id=row.id,
+            name=row.name,
+            path=row.path
+        )

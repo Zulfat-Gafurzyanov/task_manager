@@ -64,7 +64,7 @@ class TaskService:
     # ===== Status =====
 
     async def get_all_statuses(self) -> list[StatusResponse]:
-        cache_key = self.cache_repo.key_all_statuses()
+        cache_key = self.cache_repo.key_all_statuses
         cached = await self.cache_repo.get(cache_key)
         if cached:
             return [StatusResponse(**item) for item in json.loads(cached)]

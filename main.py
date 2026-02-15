@@ -82,3 +82,4 @@ app.include_router(users_router, prefix="/api/v1/auth", tags=["user"])
 register_exception_handlers(app)
 
 # TODO: config.py
+# TODO: Раcкидать функционал security

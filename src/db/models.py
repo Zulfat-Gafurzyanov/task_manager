@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Date, ForeignKey, String, UniqueConstraint
+from sqlalchemy import BigInteger, Date, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -11,7 +11,7 @@ class Base(DeclarativeBase):
 class Document(Base):
     __tablename__ = "document"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
     path: Mapped[str] = mapped_column(String(256), unique=True)
     task_id: Mapped[int] = mapped_column(
@@ -21,7 +21,7 @@ class Document(Base):
 class Status(Base):
     __tablename__ = "status"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String(64), unique=True)
 
 
@@ -30,7 +30,7 @@ class TaskTag(Base):
     __tablename__ = "tasktag"
     __table_args__ = (UniqueConstraint("task_id", "tag_id"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("task.id"), index=True)
     tag_id: Mapped[int] = mapped_column(ForeignKey("tag.id"), index=True)
 
@@ -38,7 +38,7 @@ class TaskTag(Base):
 class Tag(Base):
     __tablename__ = "tag"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String(64))
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"), index=True)
@@ -47,7 +47,7 @@ class Tag(Base):
 class Task(Base):
     __tablename__ = "task"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String(512))
     description: Mapped[str | None] = mapped_column(
         String(2048), nullable=True)
@@ -66,7 +66,7 @@ class Task(Base):
 class User(Base):
     __tablename__ = "user"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     username: Mapped[str] = mapped_column(String(64), unique=True)
     password: Mapped[str] = mapped_column(String(512))
     email: Mapped[str] = mapped_column(String(512))

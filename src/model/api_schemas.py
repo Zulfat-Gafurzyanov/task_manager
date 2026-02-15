@@ -5,7 +5,7 @@ class TokenResponse(BaseModel):
     """Ответ с токенами доступа."""
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: str = "Bearer"
 
 
 class RefreshTokenRequest(BaseModel):

@@ -1,5 +1,4 @@
 import datetime as dt
-import json
 import uuid
 from typing import Annotated
 
@@ -249,7 +248,7 @@ class Security:
         cache_key = cache_repo.key_user(user_id)
         cached = await cache_repo.get(cache_key)
         if cached:
-            return UserBase(**json.loads(cached))
+            return UserBase.model_validate_json(cached)
 
         user_dto = await user_repo.get_user_by_user_id(user_id)
         user = UserBase.model_validate(user_dto)
@@ -257,7 +256,7 @@ class Security:
         await cache_repo.setex(
             cache_key,
             3600,
-            json.dumps(user.model_dump())
+            user.model_dump_json()
         )
 
         return user
