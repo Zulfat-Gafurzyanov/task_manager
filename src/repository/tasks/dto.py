@@ -64,4 +64,3 @@ class TaskUpdateDTO(BaseModel):
     deadline_start: datetime.date | None = None
     deadline_end: datetime.date | None = None
     status_id: int | None = None
-    tags: list[TagResponseDTO] | None = None

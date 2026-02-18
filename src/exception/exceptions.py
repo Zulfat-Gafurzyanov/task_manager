@@ -14,6 +14,7 @@ class ResourceAlreadyExistsException(AppException):
     """Ресурс уже существует."""
     def __init__(self, resource: str, resource_name: str):
         self.resource = resource
+        self.resource_name = resource_name
 
         message = (
             f'{resource} c таким именем "{resource_name}" уже существует.')
