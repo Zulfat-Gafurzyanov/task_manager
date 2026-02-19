@@ -83,3 +83,4 @@ register_exception_handlers(app)
 
 # TODO: config.py
 # TODO: Раcкидать функционал security
+# TODO: Изменить предустановку статусов
