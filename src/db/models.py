@@ -15,7 +15,10 @@ class Document(Base):
     name: Mapped[str] = mapped_column(String(128))
     path: Mapped[str] = mapped_column(String(256), unique=True)
     task_id: Mapped[int] = mapped_column(
-        ForeignKey("task.id", ondelete="CASCADE"), index=True)
+        BigInteger,
+        ForeignKey("task.id", ondelete="CASCADE"),
+        index=True
+    )
 
 
 class Status(Base):
@@ -31,8 +34,16 @@ class TaskTag(Base):
     __table_args__ = (UniqueConstraint("task_id", "tag_id"),)
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    task_id: Mapped[int] = mapped_column(ForeignKey("task.id"), index=True)
-    tag_id: Mapped[int] = mapped_column(ForeignKey("tag.id"), index=True)
+    task_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("task.id"),
+        index=True
+    )
+    tag_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("tag.id"),
+        index=True
+    )
 
 
 class Tag(Base):
@@ -41,7 +52,10 @@ class Tag(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String(64))
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("user.id", ondelete="CASCADE"), index=True)
+        BigInteger,
+        ForeignKey("user.id", ondelete="CASCADE"),
+        index=True
+    )
 
 
 class Task(Base):
@@ -56,9 +70,15 @@ class Task(Base):
     deadline_end: Mapped[datetime.date | None] = mapped_column(
         Date, nullable=True)
     status_id: Mapped[int | None] = mapped_column(
-        ForeignKey("status.id"), nullable=True)
+        BigInteger,
+        ForeignKey("status.id"),
+        nullable=True
+    )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("user.id", ondelete="CASCADE"), index=True)
+        BigInteger,
+        ForeignKey("user.id", ondelete="CASCADE"),
+        index=True
+    )
 
 
 # ===== User =====
