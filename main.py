@@ -3,10 +3,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from dotenv import load_dotenv
-from sqlalchemy import text
 
+from src.celery_app.send_emails import send_newsletters_task
 from src.core.keys import Keys
-from src.db.connection import async_session_maker
 from src.db.redis import redis_client
 from src.api.v1.tasks import router_v1 as task_router
 from src.api.v1.users import router_v1 as users_router
@@ -27,19 +26,6 @@ async def lifespan(app: FastAPI):
         public_key_path=os.environ['PUBLIC_KEY_PATH'],
         private_key_password=os.environ['PRIVATE_KEY_PASSWORD']
     )
-
-    # Предустановка статусов
-    async with async_session_maker() as session:
-        result = await session.execute(text("""
-            SELECT COUNT(*)
-            FROM status
-        """))
-        if result.scalar() == 0:
-            async with session.begin():
-                await session.execute(text("""
-                    INSERT INTO status (name) VALUES
-                    ('Новая'), ('В работе'), ('На проверке'), ('Завершена')
-                """))
 
     yield
     await redis_client.close()
@@ -64,9 +50,6 @@ tags_metadata = [
 app = FastAPI(
     lifespan=lifespan,
     openapi_tags=tags_metadata,
-    openapi_url="/openapi.json",
-    redoc_url="/redoc",
-    docs_url="/docs",
     title="Task Manager API",
     description=("**Сервис** для управления вашими задачами."),
     version="1.0",
@@ -83,4 +66,6 @@ register_exception_handlers(app)
 
 # TODO: config.py
 # TODO: Раcкидать функционал security
-# TODO: Изменить предустановку статусов
+
+if __name__ == "__main__":
+    send_newsletters_task()
