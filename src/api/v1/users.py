@@ -2,7 +2,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Form, status
 
-from src.api.v1.dependencies import get_cache_repository, get_user_repository
+from src.api.v1.dependencies import (
+    get_cache_repository,
+    get_user_repository,
+    get_user_service,
+)
 from src.core.security import Security
 from src.model.api_schemas import (
     RefreshTokenRequest,
@@ -13,6 +17,7 @@ from src.model.api_schemas import (
 from src.model.users import UserBase
 from src.repository.cache import CacheRepository
 from src.repository.users.users import UserRepository
+from src.service.users import UserService
 
 router_v1 = APIRouter()
 
@@ -25,9 +30,9 @@ router_v1 = APIRouter()
 )
 async def signup(
     data: Annotated[SignUpRequest, Body()],
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+    user_service: Annotated[UserService, Depends(get_user_service)],
 ):
-    return await Security.create_user(data, user_repo)
+    return await user_service.register(data)
 
 
 @router_v1.post(

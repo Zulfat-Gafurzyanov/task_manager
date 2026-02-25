@@ -17,7 +17,6 @@ class UserResponseDTO(BaseModel):
     role: str
 
 
-
 class UserWithEmailAndPasswordDTO(BaseModel):
     """DTO для внутренней проверки пароля (содержит хеш)."""
     id: int

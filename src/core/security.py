@@ -10,27 +10,18 @@ from fastapi.security import (
     SecurityScopes
 )
 from jwt.exceptions import PyJWTError
-from passlib.context import CryptContext
 
-from src.core.encryption import Encryption
 from src.core.keys import Keys
+from src.core.password import verify_password
 from src.model.users import UserBase
 from src.model.api_schemas import (
-    SignInRequest, SignUpRequest, TokenResponse
+    SignInRequest, TokenResponse
 )
 from src.repository.cache import CacheRepository
-from src.repository.users.dto import UserCreateDTO
 from src.repository.users.users import UserRepository
 from src.api.v1.dependencies import get_user_repository, get_cache_repository
 
 bearer_scheme = HTTPBearer()
-
-pwd_context = CryptContext(
-    schemes=["argon2"],
-    argon2__memory_cost=131072,
-    argon2__parallelism=4,
-    argon2__time_cost=3,
-)
 
 ALGORITHM = "RS256"
 ACCESS_TOKEN_EXPIRE = 1  # в часах
@@ -42,21 +33,11 @@ ROLE_SCOPES = {
 }
 
 
-def _get_password_hash(password: str) -> str:
-    """Хеширует пароль с использованием Argon2."""
-    return pwd_context.hash(password)
-
-
-def _verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Проверяет соответствие пароля хешу."""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
 class Security:
     """
     Класс для работы с авторизацией и аутентификацией.
 
-    Предоставляет методы управления пользователями и токенами:
+    Предоставляет методы управления токенами и аутентификацией:
 
     Аутентификация:
         - sign_in: вход по логину и паролю
@@ -66,10 +47,6 @@ class Security:
     Токены:
         - create_tokens: создание пары access + refresh
         - refresh_tokens: обновление токенов по refresh-токену
-
-    Пользователи:
-        - create_user: регистрация нового пользователя
-        - update_user_password: смена пароля
     """
 
     @staticmethod
@@ -174,7 +151,7 @@ class Security:
                 "Неверный логин или пароль.",
             )
 
-        if not _verify_password(form_data.password, user_dto.hashed_password):
+        if not verify_password(form_data.password, user_dto.hashed_password):
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED,
                 "Неверный логин или пароль.",
@@ -262,37 +239,7 @@ class Security:
         return user
 
     @classmethod
-    async def create_user(
-        cls,
-        data: SignUpRequest,
-        user_repo: UserRepository,
-    ) -> UserBase:
-        """Создаёт пользователя с хешем пароля и зашифрованными email/phone."""
-        try:
-            dto = UserCreateDTO(
-                username=data.username,
-                password=_get_password_hash(data.password),
-                email=await Encryption.encrypt_value(data.email),
-                phone=await Encryption.encrypt_value(data.phone),
-            )
-            user_dto = await user_repo.create_user(dto)
-            return UserBase.model_validate(user_dto)
-        except ValueError as e:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail=str(e),
-            )
-
-    @classmethod
     async def signout(cls, user_id: int, cache_repo: CacheRepository) -> None:
         """Удаляет все refresh-токены пользователя из Redis."""
         await cache_repo.delete_by_pattern(f"user:{user_id}:token:*")
 
-    @classmethod
-    async def update_user_password(
-        cls, user_id: int, new_password: str, user_repo: UserRepository
-    ) -> None:
-        """Обновляет пароль пользователя."""
-        hashed_password = _get_password_hash(new_password)
-        await user_repo.update_user_password_by_user_id(
-            user_id, hashed_password)
