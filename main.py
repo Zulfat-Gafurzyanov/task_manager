@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from dotenv import load_dotenv
 
-from src.celery_app.send_emails import send_newsletters_task
 from src.core.keys import Keys
 from src.db.redis import redis_client
 from src.api.v1.tasks import router_v1 as task_router
@@ -65,7 +64,3 @@ app.include_router(users_router, prefix="/api/v1/auth", tags=["user"])
 register_exception_handlers(app)
 
 # TODO: config.py
-# TODO: Раcкидать функционал security
-
-if __name__ == "__main__":
-    send_newsletters_task()
