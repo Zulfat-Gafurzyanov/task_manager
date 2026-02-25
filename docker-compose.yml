@@ -1,20 +1,53 @@
-version: '3.8'
-
 services:
   redis:
-    image: redis:7.4-alpine 
+    image: redis:7.4-alpine
     container_name: my_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
-    networks:
-      - redis_network
+      - redis-data:/data
     command: redis-server --appendonly yes
 
-volumes:
-  redis_data:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS}"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
 
-networks:
-  redis_network:
+  maildev:
+    image: maildev/maildev
+    environment:
+      - TZ=Europe/Moscow
+      - MAILDEV_WEB_PORT=1080
+      - MAILDEV_SMTP_PORT=1025
+    ports:
+      - "8080:1080"
+      - "1025:1025"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  celery-worker:
+    build: .
+    command: celery --app src.celery_app.app worker --pool solo --loglevel=INFO
+    depends_on:
+      - rabbitmq
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//"
+      SMTP_HOST: "maildev"
+
+volumes:
+  redis-data:
+  rabbitmq-data:
