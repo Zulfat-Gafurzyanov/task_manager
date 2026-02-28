@@ -47,6 +47,18 @@ services:
     environment:
       RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//"
       SMTP_HOST: "maildev"
+      DATABASE_URL: "postgresql+asyncpg://postgres:postgres@host.docker.internal:5432/task_manager"
+
+  celery-beat:
+    build: .
+    command: celery --app src.celery_app.app beat --loglevel=INFO
+    depends_on:
+      - rabbitmq
+      - celery-worker
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//"
 
 volumes:
   redis-data:
