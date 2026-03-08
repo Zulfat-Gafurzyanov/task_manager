@@ -1,4 +1,4 @@
-from celery_app.celery_tasks import send_welcome_email
+from src.celery_app.celery_tasks import send_welcome_email
 from src.core.encryption import Encryption
 from src.core.password import get_password_hash
 from src.model.api_schemas import SignUpRequest
