@@ -4,7 +4,7 @@ from fastapi import (
     APIRouter, Depends, Body, Path, UploadFile, File,
     status, Security as FastAPISecurity
 )
-from src.api.v1.dependencies import get_task_service
+from src.api.deps import get_task_service
 from src.core.security import Security
 from src.model.filters import TaskFilterParams
 from src.model.tasks import (
@@ -16,12 +16,12 @@ from src.model.tasks import (
 from src.model.users import UserBase
 from src.service.tasks import TaskService
 
-router_v1 = APIRouter()
+router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 # ===== Status =====
 
-@router_v1.get(
+@router.get(
     "/status",
     response_model=list[StatusResponse],
     status_code=status.HTTP_200_OK,
@@ -39,7 +39,7 @@ async def get_all_statuses(
 
 # ===== Tag =====
 
-@router_v1.post(
+@router.post(
     "/tag",
     response_model=TagResponse,
     status_code=status.HTTP_201_CREATED,
@@ -56,7 +56,7 @@ async def create_tag(
     return await service.create_tag(data, current_user.id)
 
 
-@router_v1.delete(
+@router.delete(
     "/tag/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить тег"
@@ -74,7 +74,7 @@ async def delete_tag(
 
 # ===== Task =====
 
-@router_v1.post(
+@router.post(
     "/task",
     response_model=TaskResponse,
     status_code=status.HTTP_201_CREATED,
@@ -91,7 +91,7 @@ async def create_task(
     return await service.create_task(data, current_user.id)
 
 
-@router_v1.get(
+@router.get(
     "/task",
     response_model=list[TaskResponse],
     status_code=status.HTTP_200_OK,
@@ -108,7 +108,7 @@ async def get_tasks(
     return await service.get_all_tasks(filters, current_user.id)
 
 
-@router_v1.get(
+@router.get(
     "/task/{task_id}",
     response_model=TaskResponse,
     status_code=status.HTTP_200_OK,    
@@ -125,7 +125,7 @@ async def get_task(
     return await service.get_task_by_id(task_id, current_user.id)
 
 
-@router_v1.patch(
+@router.patch(
     "/task/{task_id}",
     response_model=TaskResponse,
     status_code=status.HTTP_200_OK,
@@ -143,7 +143,7 @@ async def patch_task(
     return await service.update_task(task_id, data, current_user.id)
 
 
-@router_v1.delete(
+@router.delete(
     "/task/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удаление задачи"
@@ -162,7 +162,7 @@ async def delete_task(
 # ===== TaskTag =====
 
 
-@router_v1.get(
+@router.get(
     "/task/{task_id}/tag/",
     response_model=list[TagResponse],
     status_code=status.HTTP_200_OK,
@@ -179,7 +179,7 @@ async def get_task_tags(
     return await service.get_task_tags(task_id, current_user.id)
 
 
-@router_v1.post(
+@router.post(
     "/task/{task_id}/tag/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Добавить тег к задаче"
@@ -196,7 +196,7 @@ async def add_tag_to_task(
     await service.add_tag_to_task(task_id, tag_id, current_user.id)
 
 
-@router_v1.delete(
+@router.delete(
     "/task/{task_id}/tag/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить тег задачи"
@@ -215,7 +215,7 @@ async def remove_tag_from_task(
 
 # ===== Document =====
 
-@router_v1.post(
+@router.post(
     "/task/{task_id}/document",
     response_model=DocumentResponse,
     status_code=status.HTTP_201_CREATED,
@@ -233,7 +233,7 @@ async def upload_document(
     return await service.upload_document(task_id, file, current_user.id)
 
 
-@router_v1.get(
+@router.get(
     "/task/{task_id}/document",
     response_model=list[DocumentResponse],
     status_code=status.HTTP_200_OK,
@@ -250,7 +250,7 @@ async def get_task_documents(
     return await service.get_task_documents(task_id, current_user.id)
 
 
-@router_v1.delete(
+@router.delete(
     "/document/{document_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить документ"

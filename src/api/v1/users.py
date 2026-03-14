@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Form, status
 
-from src.api.v1.dependencies import (
+from src.api.deps import (
     get_cache_repository,
     get_user_repository,
     get_user_service,
@@ -19,10 +19,10 @@ from src.repository.cache import CacheRepository
 from src.repository.users.users import UserRepository
 from src.service.users import UserService
 
-router_v1 = APIRouter()
+router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router_v1.post(
+@router.post(
     "/signup",
     response_model=UserBase,
     status_code=status.HTTP_201_CREATED,
@@ -35,7 +35,7 @@ async def signup(
     return await user_service.register(data)
 
 
-@router_v1.post(
+@router.post(
     "/signin",
     response_model=TokenResponse,
     summary="Вход в систему"
@@ -48,7 +48,7 @@ async def signin(
     return await Security.sign_in(form_data, user_repo, cache_repo)
 
 
-@router_v1.post(
+@router.post(
     "/signout",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Выход из системы"
@@ -60,7 +60,7 @@ async def signout(
     await Security.signout(current_user.id, cache_repo)
 
 
-@router_v1.post(
+@router.post(
     "/refresh",
     response_model=TokenResponse,
     summary="Обновление токенов"
@@ -74,7 +74,7 @@ async def refresh_tokens(
         data.refresh_token, user_repo, cache_repo)
 
 
-@router_v1.get(
+@router.get(
     "/me",
     response_model=UserBase,
     summary="Получить информацию о текущем пользователе"
