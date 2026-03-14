@@ -1,23 +1,39 @@
-import os
+import logging
 
-from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
     async_sessionmaker,
     create_async_engine,
-    AsyncSession
 )
 
-load_dotenv()
+from src.core.config import settings
 
-engine = create_async_engine(
-    os.environ['DATABASE_URL'],
-    echo=True,  # Убрать в prod.
-    pool_pre_ping=True,
+logger = logging.getLogger(__name__)
+
+engine: AsyncEngine | None = None
+async_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+async def init_db_pool() -> None:
+    global engine, async_session_factory
+    engine = create_async_engine(
+        settings.DATABASE_URL_SQLALCHEMY,
+        pool_size=settings.DB_MIN_POOL_SIZE,
+        max_overflow=settings.DB_MAX_POOL_SIZE - settings.DB_MIN_POOL_SIZE,
+        echo=False,
     )
-async_session_maker = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+    async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    logger.info(
+        "SQLAlchemy async engine создан (pool_size=%d, max_overflow=%d)",
+        settings.DB_MIN_POOL_SIZE,
+        settings.DB_MAX_POOL_SIZE - settings.DB_MIN_POOL_SIZE,
+    )
 
-# TODO: настройки для prod
+
+async def close_db_pool() -> None:
+    global engine
+    if engine:
+        await engine.dispose()
+        engine = None
+        logger.info("SQLAlchemy async engine закрыт")
