@@ -1,9 +1,7 @@
-import os
 
-from dotenv import load_dotenv
 from redis.asyncio import Redis
 
-load_dotenv()
+from src.core.config import settings
 
 
 class RedisClient:
@@ -13,7 +11,7 @@ class RedisClient:
 
     async def connect(self) -> None:
         self.redis = await Redis.from_url(
-            os.environ['REDIS_URL'],
+            settings.REDIS_URL,
             encoding="utf-8",
             decode_responses=True,
             max_connections=10

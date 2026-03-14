@@ -18,7 +18,7 @@ class Keys:
                 private_key_data = await f.read()
             cls._private_key = serialization.load_pem_private_key(
                 data=private_key_data,
-                password=private_key_password.encode(),
+                password=private_key_password.encode() if private_key_password else None,
             )
 
         if cls._public_key is None:

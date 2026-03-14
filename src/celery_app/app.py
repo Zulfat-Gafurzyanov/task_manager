@@ -1,15 +1,12 @@
-import os
-
 from celery import Celery
 from celery.schedules import crontab
-from dotenv import load_dotenv
 from kombu import Queue
 
-load_dotenv()
+from src.core.config import settings
 
 app = Celery(
     "src.celery_app.app",
-    broker=os.environ["RABBITMQ_URL"],
+    broker=settings.RABBIT_AMQP,
     backend="rpc://",
     include=["src.celery_app.celery_tasks"],
 )
