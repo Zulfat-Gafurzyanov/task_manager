@@ -1,9 +1,10 @@
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.connection import async_session_maker
+import src.db.connection as db_connection
 from src.db.redis import redis_client
 from src.repository.cache import CacheRepository
 from src.repository.tasks.tasks import TaskRepository
@@ -12,9 +13,10 @@ from src.service.tasks import TaskService
 from src.service.users import UserService
 
 
-async def get_session():
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency для получения сессии БД."""
-    async with async_session_maker() as session:
+    assert db_connection.async_session_factory is not None, "DB not initialized"
+    async with db_connection.async_session_factory() as session:
         yield session
 
 
