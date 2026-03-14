@@ -19,6 +19,3 @@ class TaskFilterParams(BaseModel):
         "status_id"
     ] = "id"
     order_direction: Literal["asc", "desc"] = "desc"
-
-    # TODO:
-    # Фильтры.

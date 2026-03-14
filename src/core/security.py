@@ -19,7 +19,7 @@ from src.model.api_schemas import (
 )
 from src.repository.cache import CacheRepository
 from src.repository.users.users import UserRepository
-from src.api.v1.dependencies import get_user_repository, get_cache_repository
+from src.api.deps import get_user_repository, get_cache_repository
 
 bearer_scheme = HTTPBearer()
 
