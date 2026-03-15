@@ -15,7 +15,15 @@ from src.service.users import UserService
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency для получения сессии БД."""
-    assert db_connection.async_session_factory is not None, "DB not initialized"
+    assert db_connection.async_session_factory is not None, "БД не запущена"
+    async with db_connection.async_session_factory() as session:
+        yield session
+
+
+async def get_user_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Отдельная сессия для user_repo."""
+    assert db_connection.async_session_factory is not None, "БД не запущена"
     async with db_connection.async_session_factory() as session:
         yield session
 
@@ -28,7 +36,7 @@ def get_task_repository(
 
 
 def get_user_repository(
-        session: Annotated[AsyncSession, Depends(get_session)]
+        session: Annotated[AsyncSession, Depends(get_user_session)]
 ) -> UserRepository:
     """Dependency для получения репозитория пользователей."""
     return UserRepository(session)
