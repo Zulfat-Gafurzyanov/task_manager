@@ -19,8 +19,8 @@ app.conf.task_queues = (
 app.conf.beat_schedule = {
     "send-planned-email-every-day": {
         "task": "src.celery_app.celery_tasks.send_planned_email",
-        "schedule": crontab(minute="*/5"),
-        "options": {"expires": 270},  # 4.5 минуты в секундах
+        "schedule": crontab(hour="22", minute="0"),
+        "options": {"expires": 3600},
     },
 }
 
