@@ -75,7 +75,7 @@ async def delete_tag(
 # ===== Task =====
 
 @router.post(
-    "/task",
+    "",
     response_model=TaskResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Создать задачу"
@@ -92,7 +92,7 @@ async def create_task(
 
 
 @router.get(
-    "/task",
+    "",
     response_model=list[TaskResponse],
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о всех задачах"
@@ -109,7 +109,7 @@ async def get_tasks(
 
 
 @router.get(
-    "/task/{task_id}",
+    "/{task_id}",
     response_model=TaskResponse,
     status_code=status.HTTP_200_OK,    
     summary="Получить информацию о конкретной задаче"
@@ -126,7 +126,7 @@ async def get_task(
 
 
 @router.patch(
-    "/task/{task_id}",
+    "/{task_id}",
     response_model=TaskResponse,
     status_code=status.HTTP_200_OK,
     summary="Частичное обновление задачи"
@@ -144,7 +144,7 @@ async def patch_task(
 
 
 @router.delete(
-    "/task/{task_id}",
+    "/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удаление задачи"
 )
@@ -163,7 +163,7 @@ async def delete_task(
 
 
 @router.get(
-    "/task/{task_id}/tag/",
+    "/{task_id}/tag/",
     response_model=list[TagResponse],
     status_code=status.HTTP_200_OK,
     summary="Получить все теги задачи"
@@ -180,7 +180,7 @@ async def get_task_tags(
 
 
 @router.post(
-    "/task/{task_id}/tag/{tag_id}",
+    "/{task_id}/tag/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Добавить тег к задаче"
 )
@@ -197,7 +197,7 @@ async def add_tag_to_task(
 
 
 @router.delete(
-    "/task/{task_id}/tag/{tag_id}",
+    "/{task_id}/tag/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить тег задачи"
 )
@@ -216,7 +216,7 @@ async def remove_tag_from_task(
 # ===== Document =====
 
 @router.post(
-    "/task/{task_id}/document",
+    "/{task_id}/document",
     response_model=DocumentResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Добавить документ к задаче"
@@ -234,7 +234,7 @@ async def upload_document(
 
 
 @router.get(
-    "/task/{task_id}/document",
+    "/{task_id}/document",
     response_model=list[DocumentResponse],
     status_code=status.HTTP_200_OK,
     summary="Получить информацию о всех документах задачи"
