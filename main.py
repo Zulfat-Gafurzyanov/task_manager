@@ -7,6 +7,7 @@ from src.core.keys import Keys
 from src.db.connection import close_db_pool, init_db_pool
 from src.db.redis import redis_client
 from src.api.v1.router import v1_router
+from src.broker.rpc_publisher import rpc_publisher
 from src.exception.handlers import register_exception_handlers
 
 
@@ -22,26 +23,38 @@ async def lifespan(app: FastAPI):
     )
     await init_db_pool()
     await redis_client.connect()
+    await rpc_publisher.connect(
+        response_queue_name="task_assignment_response_queue",
+        response_exchange_name="response_exchange",
+    )
 
     yield
 
     # ===== Закрытие =====
     await redis_client.close()
     await close_db_pool()
+    await rpc_publisher.close()
 
 tags_metadata = [
     {
-        "name": "task",
+        "name": "tasks",
         "description": (
             "**Управление задачами**: создание, чтение, обновление и "
             "удаление задач."
         )
     },
     {
-        "name": "user",
+        "name": "users",
         "description": (
             "**Аутентификация и авторизация**: регистрация, вход, "
             "обновление токенов."
+        )
+    },
+    {
+        "name": "assignments",
+        "description": (
+            "**Назначение пользователей на задачи**: добавление, удаление и "
+            "просмотр исполнителей."
         )
     }
 ]

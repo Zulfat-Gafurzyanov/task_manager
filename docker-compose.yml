@@ -60,6 +60,35 @@ services:
     environment:
       RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//"
 
+# ===== Сервис по добавлению пользователя к задаче ===
+
+  task-assignment-db:
+    image: postgres:16
+    container_name: task_assigment_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: task_assigment
+    ports:
+      - "5433:5432"
+    volumes:
+      - task-assigment-data:/var/lib/postgresql/data
+
+  task-assignment-service:
+    build: ./src/service/task_assigment_service
+    container_name: task_assigment_service
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
+      - task-assignment-db
+    environment:
+      DATABASE_URL_SQLALCHEMY: "postgresql+asyncpg://postgres:postgres@task-assignment-db:5432/task_assigment"
+      RABBIT_AMQP: "amqp://guest:guest@rabbitmq:5672/"
+
+# ===== VOLUMES =====
+
 volumes:
   redis-data:
   rabbitmq-data:
+  task-assigment-data:
