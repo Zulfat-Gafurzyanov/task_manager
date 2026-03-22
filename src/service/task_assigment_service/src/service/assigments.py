@@ -1,9 +1,12 @@
 import json
+import logging
 
 from sqlalchemy.exc import IntegrityError
 
 import src.db.connection as db
 from src.repository.assigments import AssignmentRepository
+
+logger = logging.getLogger(__name__)
 
 
 async def handle(body: bytes) -> str:
@@ -11,6 +14,7 @@ async def handle(body: bytes) -> str:
 
     action = data.get("action")
     if action not in ("add", "remove", "list"):
+        logger.warning("Неизвестный action: %s", action)
         return json.dumps(
             {"status": "error", "detail": f"Неизвестный action: {action}"})
 
@@ -28,13 +32,24 @@ async def handle(body: bytes) -> str:
         if action == "add":
             try:
                 await repo.add(task_id, user_id)
+                logger.info(
+                    "Пользователь назначен: task_id=%s, user_id=%s",
+                    task_id, user_id,
+                )
                 return json.dumps({"status": "ok"})
             except IntegrityError:
+                logger.warning(
+                    "Пользователь уже назначен: task_id=%s, user_id=%s",
+                    task_id, user_id,
+                )
                 return json.dumps(
                     {"status": "error", "detail": "Пользователь уже назначен"})
 
         elif action == "remove":
             await repo.remove(task_id, user_id)
+            logger.info(
+                "Назначение снято: task_id=%s, user_id=%s", task_id, user_id,
+            )
             return json.dumps({"status": "ok"})
 
         else:

@@ -5,7 +5,12 @@ from src.broker.rpc_consumer import rpc_consumer
 from src.db.connection import init_db_pool, close_db_pool
 from src.service.assigments import handle
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    force=True,
+)
 
 
 async def main():

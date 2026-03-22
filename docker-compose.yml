@@ -86,6 +86,19 @@ services:
       DATABASE_URL_SQLALCHEMY: "postgresql+asyncpg://postgres:postgres@task-assignment-db:5432/task_assigment"
       RABBIT_AMQP: "amqp://guest:guest@rabbitmq:5672/"
 
+# ===== Notification Service =====
+
+  notification-service:
+    build: ./src/service/notification_service
+    container_name: notification_service
+    restart: unless-stopped
+    depends_on:
+      - redis
+    ports:
+      - "8001:8001"
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
+
 # ===== VOLUMES =====
 
 volumes:

@@ -1,9 +1,11 @@
 import datetime as dt
+import logging
 import uuid
 from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, status
+
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
@@ -20,6 +22,8 @@ from src.model.api_schemas import (
 from src.repository.cache import CacheRepository
 from src.repository.users.users import UserRepository
 from src.api.deps import get_user_repository, get_cache_repository
+
+logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer()
 
@@ -119,6 +123,10 @@ class Security:
 
         key = cache_repo.key_token(user_id, token_jti)
         if await cache_repo.get(key) is None:
+            logger.warning(
+                "Обновление токена отклонено: сессия истекла, user_id=%d",
+                user_id,
+            )
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED,
                 "Сессия истекла.",
@@ -146,12 +154,20 @@ class Security:
         try:
             user_dto = await user_repo.get_user_by_login(form_data.username)
         except ValueError:
+            logger.warning(
+                "Неудачная попытка входа: пользователь не найден, username=%s",
+                form_data.username,
+            )
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED,
                 "Неверный логин или пароль.",
             )
 
         if not verify_password(form_data.password, user_dto.hashed_password):
+            logger.warning(
+                "Неудачная попытка входа: неверный пароль, username=%s",
+                form_data.username,
+            )
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED,
                 "Неверный логин или пароль.",
@@ -160,6 +176,7 @@ class Security:
         access, refresh = await cls.create_tokens(
             user_dto.id, user_dto.role, cache_repo
         )
+        logger.info("Пользователь вошёл: user_id=%d", user_dto.id)
         return TokenResponse(
             access_token=access,
             refresh_token=refresh,
@@ -242,4 +259,5 @@ class Security:
     async def signout(cls, user_id: int, cache_repo: CacheRepository) -> None:
         """Удаляет все refresh-токены пользователя из Redis."""
         await cache_repo.delete_by_pattern(f"user:{user_id}:token:*")
+        logger.info("Пользователь вышел: user_id=%d", user_id)
 

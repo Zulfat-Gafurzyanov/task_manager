@@ -1,9 +1,13 @@
+import logging
+
 from src.celery_app.celery_tasks import send_welcome_email
 from src.core.encryption import Encryption
 from src.core.password import get_password_hash
 from src.model.api_schemas import SignUpRequest
 from src.model.users import UserBase
 from src.repository.users.users import UserRepository
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -45,6 +49,7 @@ class UserService:
             phone=await Encryption.encrypt_value(data.phone),
         )
         user_dto = await self.user_repo.create_user(dto)
+        logger.info("Пользователь зарегистрирован: username=%s", data.username)
 
         # Отправляем письмо на почту:
         send_welcome_email.delay(data.username, data.email)

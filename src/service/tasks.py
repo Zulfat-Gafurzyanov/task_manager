@@ -1,9 +1,12 @@
 import json
+import logging
 import os
 import uuid
 from pathlib import Path
 
 from fastapi import UploadFile
+
+from src.broker.event_bus_publisher import event_bus
 
 from src.model.filters import TaskFilterParams
 from src.model.tasks import (
@@ -19,6 +22,8 @@ from src.repository.tasks.dto import (
 )
 from src.repository.cache import CacheRepository
 from src.repository.tasks.tasks import TaskRepository
+
+logger = logging.getLogger(__name__)
 
 
 class TaskService:
@@ -67,6 +72,7 @@ class TaskService:
         cache_key = self.cache_repo.key_all_statuses
         cached = await self.cache_repo.get(cache_key)
         if cached:
+            logger.debug("Статусы получены из кеша")
             return [StatusResponse(**item) for item in json.loads(cached)]
 
         statuses = await self.task_repo.get_all_statuses()
@@ -84,10 +90,12 @@ class TaskService:
     async def create_tag(self, data: TagCreate, user_id: int) -> TagResponse:
         tag_dto = TagCreateDTO(name=data.name, user_id=user_id)
         created_tag = await self.task_repo.create_tag(tag_dto)
+        logger.info("Тег создан: id=%d, user_id=%d", created_tag.id, user_id)
         return TagResponse.model_validate(created_tag)
 
     async def delete_tag(self, tag_id: int, user_id: int) -> None:
         await self.task_repo.delete_tag(tag_id, user_id)
+        logger.info("Тег удалён: id=%d, user_id=%d", tag_id, user_id)
 
     # ===== Task =====
 
@@ -103,6 +111,14 @@ class TaskService:
             user_id=user_id,
         )
         created_task = await self.task_repo.create_task(task_dto)
+        logger.info("Задача создана: id=%d, user_id=%d", created_task.id, user_id)
+
+        # Event-🚌
+        await event_bus.publish(
+            "task:task_created",
+            {"task_id": created_task.id, "user_id": user_id}
+        )
+
         return TaskResponse.model_validate(created_task)
 
     async def get_all_tasks(
@@ -129,12 +145,44 @@ class TaskService:
         updated_task = await self.task_repo.update_task(
             task_id, task_dto, user_id
         )
+
+        # Event-🚌
+        updated_fields = data.model_dump(exclude_unset=True, mode="json")
+        logger.info(
+            "Задача обновлена: id=%d, user_id=%d, поля=%s",
+            updated_task.id, user_id, list(updated_fields.keys()),
+        )
+        await event_bus.publish(
+            "task:task_updated",
+            {
+                "task_id": updated_task.id,
+                "user_id": user_id,
+                "updated_fields": updated_fields
+            }
+        )
+        if "status_id" in updated_fields:
+            await event_bus.publish(
+                "task:task_statuses_updated",
+                {
+                    "task_id": updated_task.id,
+                    "user_id": user_id,
+                    "status_id": updated_fields["status_id"]
+                }
+            )
+
         return TaskResponse.model_validate(updated_task)
 
     async def delete_task(
         self, task_id: int, user_id: int
     ) -> None:
         await self.task_repo.delete_task(task_id, user_id)
+        logger.info("Задача удалена: id=%d, user_id=%d", task_id, user_id)
+
+        # Event-🚌
+        await event_bus.publish(
+            "task:task_deleted",
+            {"task_id": task_id, "user_id": user_id}
+        )
 
     # ===== TaskTag =====
 
@@ -149,11 +197,31 @@ class TaskService:
         self, task_id: int, tag_id: int, user_id: int
     ) -> None:
         await self.task_repo.add_tag_to_task(task_id, tag_id, user_id)
+        logger.info(
+            "Тег добавлен к задаче: task_id=%d, tag_id=%d, user_id=%d",
+            task_id, tag_id, user_id,
+        )
+
+        # Event-🚌
+        await event_bus.publish(
+            "task:tag_added",
+            {"task_id": task_id, "tag_id": tag_id, "user_id": user_id}
+        )
 
     async def remove_tag_from_task(
         self, task_id: int, tag_id: int, user_id: int
     ) -> None:
         await self.task_repo.remove_tag_from_task(task_id, tag_id, user_id)
+        logger.info(
+            "Тег удалён у задачи: task_id=%d, tag_id=%d, user_id=%d",
+            task_id, tag_id, user_id,
+        )
+
+        # Event-🚌
+        await event_bus.publish(
+            "task:tag_removed",
+            {"task_id": task_id, "tag_id": tag_id, "user_id": user_id}
+        )
 
     # ===== Document =====
 
@@ -175,6 +243,9 @@ class TaskService:
             task_id=task_id,
         )
         created_doc = await self.task_repo.create_document(doc_dto, user_id)
+        logger.info(
+            "Документ загружен: task_id=%d, file=%s", task_id, file.filename,
+        )
         return DocumentResponse.model_validate(created_doc)
 
     async def get_task_documents(
@@ -201,3 +272,4 @@ class TaskService:
         file_path = Path(doc.path)
         if file_path.exists():
             os.remove(file_path)
+        logger.info("Документ удалён: id=%d, user_id=%d", document_id, user_id)

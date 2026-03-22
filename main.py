@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +10,14 @@ from src.db.redis import redis_client
 from src.api.v1.router import v1_router
 from src.broker.rpc_publisher import rpc_publisher
 from src.exception.handlers import register_exception_handlers
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -22,11 +31,20 @@ async def lifespan(app: FastAPI):
         private_key_password=settings.PRIVATE_KEY_PASSWORD
     )
     await init_db_pool()
-    await redis_client.connect()
-    await rpc_publisher.connect(
-        response_queue_name="task_assignment_response_queue",
-        response_exchange_name="response_exchange",
-    )
+
+    try:
+        await redis_client.connect()
+        logger.info("Redis подключен")
+    except Exception as e:
+        logger.warning("Redis недоступен: %s", e)
+
+    try:
+        await rpc_publisher.connect(
+            response_queue_name="task_assignment_response_queue",
+            response_exchange_name="response_exchange",
+        )
+    except Exception as e:
+        logger.warning("RabbitMQ недоступен, RPC отключён: %s", e)
 
     yield
 

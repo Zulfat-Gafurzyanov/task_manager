@@ -6,6 +6,8 @@ from aio_pika.abc import AbstractIncomingMessage
 
 from src.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 class RpcConsumer:
     """Потребитель для обработки RPC-запросов."""
@@ -19,11 +21,13 @@ class RpcConsumer:
         callback: Callable,
         response_exchange_name: str = "response_exchange",
     ):
-        logging.info("Starting consuming from queue: '%s'.", queue_name)
         connection = await connect(self.amqp_url)
         channel = await connection.channel()
+        logger.info(
+            "RPC Consumer: начало прослушивания очереди '%s'.", queue_name)
         # обменник + очередь
-        response_exchange = await channel.declare_exchange(name=response_exchange_name, type=ExchangeType.DIRECT)
+        response_exchange = await channel.declare_exchange(
+            name=response_exchange_name, type=ExchangeType.DIRECT)
         queue = await channel.declare_queue(name=queue_name, auto_delete=False)
         # обработка сообщений
         async with queue.iterator() as iterator:
@@ -31,7 +35,10 @@ class RpcConsumer:
             async for message in iterator:
                 async with message.process(requeue=False):
                     if message.headers:
-                        response = await callback(message.body, message.headers)
+                        response = await callback(
+                            message.body,
+                            message.headers
+                        )
                     else:
                         response = await callback(message.body)
                     await response_exchange.publish(
