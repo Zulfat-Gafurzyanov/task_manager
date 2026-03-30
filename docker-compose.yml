@@ -1,66 +1,24 @@
 services:
-  redis:
-    image: redis:7.4-alpine
-    container_name: my_redis
+
+  # ===== Infrastructure =====
+
+  postgres:
+    image: postgres:16
+    container_name: task_manager_db
     restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: task_manager
     ports:
-      - "6379:6379"
+      - "5432:5432"
     volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    hostname: rabbitmq
-    container_name: rabbitmq
-    restart: unless-stopped
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-
-  maildev:
-    image: maildev/maildev
-    environment:
-      - TZ=Europe/Moscow
-      - MAILDEV_WEB_PORT=1080
-      - MAILDEV_SMTP_PORT=1025
-    ports:
-      - "8080:1080"
-      - "1025:1025"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "1m"
-
-  celery-worker:
-    build: .
-    command: celery --app src.celery_app.app worker --pool solo --loglevel=INFO
-    depends_on:
-      - rabbitmq
-    env_file:
-      - .env
-    environment:
-      RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//"
-      SMTP_HOST: "maildev"
-      DATABASE_URL: "postgresql+asyncpg://postgres:postgres@host.docker.internal:5432/task_manager"
-
-  celery-beat:
-    build: .
-    command: celery --app src.celery_app.app beat --loglevel=INFO
-    depends_on:
-      - rabbitmq
-      - celery-worker
-    env_file:
-      - .env
-    environment:
-      RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672//"
-
-# ===== Сервис по добавлению пользователя к задаче ===
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d task_manager"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   task-assignment-db:
     image: postgres:16
@@ -74,34 +32,155 @@ services:
       - "5433:5432"
     volumes:
       - task-assigment-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d task_assigment"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: my_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  maildev:
+    image: maildev/maildev
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Moscow
+      - MAILDEV_WEB_PORT=1080
+      - MAILDEV_SMTP_PORT=1025
+    ports:
+      - "8080:1080"
+      - "1025:1025"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  # ===== Application Services =====
+
+  api:
+    build: .
+    container_name: task_manager_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/task_manager"
+      DATABASE_URL_SQLALCHEMY: "postgresql+asyncpg://postgres:postgres@postgres:5432/task_manager"
+      REDIS_URL: "redis://redis:6379/0"
+      RABBIT_AMQP: "amqp://guest:guest@rabbitmq:5672/"
+      SMTP_HOST: "maildev"
+    volumes:
+      - ./keys:/app/keys:ro
 
   task-assignment-service:
-    build: ./src/service/task_assigment_service
+    build: ./src/service/task_assigment
     container_name: task_assigment_service
     restart: unless-stopped
     depends_on:
-      - rabbitmq
-      - task-assignment-db
+      rabbitmq:
+        condition: service_healthy
+      task-assignment-db:
+        condition: service_healthy
     environment:
+      DATABASE_URL: "postgresql://postgres:postgres@task-assignment-db:5432/task_assigment"
       DATABASE_URL_SQLALCHEMY: "postgresql+asyncpg://postgres:postgres@task-assignment-db:5432/task_assigment"
       RABBIT_AMQP: "amqp://guest:guest@rabbitmq:5672/"
 
-# ===== Notification Service =====
-
   notification-service:
-    build: ./src/service/notification_service
+    build: ./src/service/notification
     container_name: notification_service
     restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     ports:
       - "8001:8001"
     environment:
       REDIS_URL: "redis://redis:6379/0"
 
+  celery-worker:
+    build: .
+    container_name: task_manager_celery_worker
+    restart: unless-stopped
+    command: celery --app src.celery_app.app worker --pool solo --loglevel=INFO
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/task_manager"
+      DATABASE_URL_SQLALCHEMY: "postgresql+asyncpg://postgres:postgres@postgres:5432/task_manager"
+      REDIS_URL: "redis://redis:6379/0"
+      RABBIT_AMQP: "amqp://guest:guest@rabbitmq:5672/"
+      SMTP_HOST: "maildev"
+    volumes:
+      - ./keys:/app/keys:ro
+
+  celery-beat:
+    build: .
+    container_name: task_manager_celery_beat
+    restart: unless-stopped
+    command: celery --app src.celery_app.app beat --loglevel=INFO
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      celery-worker:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      RABBIT_AMQP: "amqp://guest:guest@rabbitmq:5672/"
+    volumes:
+      - ./keys:/app/keys:ro
+
 # ===== VOLUMES =====
 
 volumes:
+  postgres-data:
   redis-data:
   rabbitmq-data:
   task-assigment-data:
