@@ -1,6 +1,6 @@
 import logging
 
-from src.ws.manager import manager
+from notification.src.ws.manager import manager
 
 logger = logging.getLogger(__name__)
 
@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 async def handle_task_created(data: dict):
     task_id = data["task_id"]
     user_id = data["user_id"]
-    logger.info("[NOTIFY] Задача #%s создана пользователем #%s", task_id, user_id)
+    logger.info(
+        "[NOTIFY] Задача #%s создана пользователем #%s", task_id, user_id)
     await manager.send_to_user(user_id, {
         "event": "task_created",
         "task_id": task_id,
@@ -48,7 +49,8 @@ async def handle_status_updated(data: dict):
 async def handle_task_deleted(data: dict):
     task_id = data["task_id"]
     user_id = data["user_id"]
-    logger.info("[NOTIFY] Задача #%s удалена пользователем #%s", task_id, user_id)
+    logger.info(
+        "[NOTIFY] Задача #%s удалена пользователем #%s", task_id, user_id)
     await manager.send_to_user(user_id, {
         "event": "task_deleted",
         "task_id": task_id,

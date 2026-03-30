@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from src.ws.manager import manager
+from notification.src.ws.manager import manager
 
 ws_router = APIRouter()
 

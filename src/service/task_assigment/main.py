@@ -1,9 +1,9 @@
 import asyncio
 import logging
 
-from src.broker.rpc_consumer import rpc_consumer
-from src.db.connection import init_db_pool, close_db_pool
-from src.service.assigments import handle
+from task_assigment.src.broker.rpc_consumer import rpc_consumer
+from task_assigment.src.db.connection import init_db_pool, close_db_pool
+from task_assigment.src.service.assigments import handle
 
 logging.basicConfig(
     level=logging.INFO,

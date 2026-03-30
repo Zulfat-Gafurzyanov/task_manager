@@ -4,10 +4,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.broker.event_bus_consumer import EventBusConsumer
-from src.core.config import settings
-from src.handlers.tasks import HANDLERS
-from src.ws.router import ws_router
+from notification.src.broker.event_bus_consumer import EventBusConsumer
+from notification.src.core.config import settings
+from notification.src.handlers.tasks import HANDLERS
+from notification.src.ws.router import ws_router
 
 logging.basicConfig(
     level=logging.INFO,

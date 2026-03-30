@@ -3,8 +3,8 @@ import logging
 
 from sqlalchemy.exc import IntegrityError
 
-import src.db.connection as db
-from src.repository.assigments import AssignmentRepository
+import task_assigment.src.db.connection as db
+from task_assigment.src.repository.assigments import AssignmentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +22,18 @@ async def handle(body: bytes) -> str:
     if task_id is None:
         return json.dumps({"status": "error", "detail": "task_id обязателен"})
 
-    user_id = data.get("user_id")
-    if action in ("add", "remove") and user_id is None:
-        return json.dumps({"status": "error", "detail": "user_id обязателен"})
+    if db.async_session_factory is None:
+        logger.error("БД не инициализирована")
+        return json.dumps(
+            {"status": "error", "detail": "БД не инициализирована"})
 
     async with db.async_session_factory() as session:
         repo = AssignmentRepository(session)
+
+        user_id = data.get("user_id")
+        if action in ("add", "remove") and user_id is None:
+            return json.dumps(
+                {"status": "error", "detail": "user_id обязателен"})
 
         if action == "add":
             try:
@@ -37,6 +43,7 @@ async def handle(body: bytes) -> str:
                     task_id, user_id,
                 )
                 return json.dumps({"status": "ok"})
+            # TODO: Нельзя назначить самого себя на задачу!!!!!!!!!!!!!!!!!!!!!!!!
             except IntegrityError:
                 logger.warning(
                     "Пользователь уже назначен: task_id=%s, user_id=%s",

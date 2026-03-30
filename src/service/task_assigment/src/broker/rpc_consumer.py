@@ -4,7 +4,7 @@ from collections.abc import Callable
 from aio_pika import ExchangeType, Message, connect
 from aio_pika.abc import AbstractIncomingMessage
 
-from src.core.config import settings
+from task_assigment.src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
